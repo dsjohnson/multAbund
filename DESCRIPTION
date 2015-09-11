@@ -1,0 +1,11 @@
+Package: multAbund
+Type: Package
+Title: Model Multivariate Abundance and Occurence Using the Dirichlet Process Prior
+Version: 0.01
+Date: 2015-09-10
+Author: Devin S. Johnson
+Maintainer: Devin S. Johnson <devin.johnson@noaa.gov>
+Description: More about what it does (maybe more than one line)
+License: CC0
+Imports: Rcpp, copula, mvtnorm
+LinkingTo: Rcpp, RcppArmadillo, RcppProgress
