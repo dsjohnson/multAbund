@@ -2,15 +2,15 @@
 % Please edit documentation in R/get_opt_alpha_prior.R
 \name{get_opt_alpha_prior}
 \alias{get_opt_alpha_prior}
-\title{Obtain parameters for gamma prior such that the distribution of the number of groups is equal to 1/k}
+\title{Obtain parameters for gamma prior such that the distribution of the number of groups is equal to the \code{target} argument}
 \usage{
-get_opt_alpha_prior(n)
+get_opt_alpha_prior(n, target = NULL)
 }
 \arguments{
 \item{n}{An integer representing the maximum number of groups. Typically this is the number of individuals.}
-}
-\value{
-A vector containing the parameters for a gamma distribution.
+
+\item{target}{The desired prior probability mass function for the number of groups. This function must return a
+vector of length \code{n} which contains the prior probabilities for each group size.}
 }
 \description{
 This function uses the method of Dorazio (2009) to calculate the parameters of a gamma prior on the Dirichlet process such that the induced distribution function

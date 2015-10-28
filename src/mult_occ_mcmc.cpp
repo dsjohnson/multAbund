@@ -36,6 +36,7 @@ List mult_occ_mcmc(
     const double& a_alpha,
     const double& b_alpha,
     const int& block, 
+    const int& begin_group_update,
     const int& burn, 
     const int& iter
 ) {
@@ -87,7 +88,7 @@ List mult_occ_mcmc(
   arma::vec kappa_pi_store(iter);
   
   // Rcout << "B" << endl;
- 
+  
   // #omega items
   arma::mat HtH = H.t()*H;
   arma::mat HtH_inv = inv_sympd(HtH);
@@ -196,39 +197,40 @@ List mult_occ_mcmc(
     // Rcout << "beta updated" << endl;
     
     // update C_pi matrix
-    res = z-X*beta;
-    for(int k=1; k<I; k++){
-      ln_link_probs.set_size(k+1);
-      ln_link_probs.zeros();
-      for(int link=0; link<=k; link++){
+    if(i > begin_group_update){
+      res = z-X*beta;
+      for(int k=1; k<I; k++){
+        ln_link_probs.set_size(k+1);
+        ln_link_probs.zeros();
+        for(int link=0; link<=k; link++){
+          L.row(k) = zeros_row;
+          L(k,link) = 1;
+          C_pi = LtoC(L);
+          kappa_pi = C_pi.n_cols;
+          K_pi = kron(C_pi, H);
+          Sigma_delta_pi_inv = kron(eye<mat>(kappa_pi,kappa_pi), exp(-2*log_omega)*HtH);
+          V_delta_pi_inv = K_pi.t()*K_pi + Sigma_delta_pi_inv; 
+          delta_pi_hat = solve(V_delta_pi_inv, K_pi.t()*res);
+          ln_link_probs(link) = (kappa_pi*q/2)*log(2*PI) 
+            - 0.5*log(det(V_delta_pi_inv))
+            + ln_norm_2(res-K_pi*delta_pi_hat, 1) 
+            + ln_mvnorm(delta_pi_hat, Sigma_delta_pi_inv);
+        }
+        ln_link_probs -= max(ln_link_probs);
+        ln_link_probs(k) += log_alpha;
         L.row(k) = zeros_row;
-        L(k,link) = 1;
-        C_pi = LtoC(L);
-        kappa_pi = C_pi.n_cols;
-        K_pi = kron(C_pi, H);
-        Sigma_delta_pi_inv = kron(eye<mat>(kappa_pi,kappa_pi), exp(-2*log_omega)*HtH);
-        V_delta_pi_inv = K_pi.t()*K_pi + Sigma_delta_pi_inv; 
-        delta_pi_hat = solve(V_delta_pi_inv, K_pi.t()*res);
-        ln_link_probs(link) = (kappa_pi*q/2)*log(2*PI) 
-          - 0.5*log(det(V_delta_pi_inv))
-          + ln_norm_2(res-K_pi*delta_pi_hat, 1) 
-          + ln_mvnorm(delta_pi_hat, Sigma_delta_pi_inv);
+        L(k,sample_du(exp(ln_link_probs))-1) = 1;
       }
-      ln_link_probs -= max(ln_link_probs);
-      ln_link_probs(k) += log_alpha;
-      L.row(k) = zeros_row;
-      L(k,sample_du(exp(ln_link_probs))-1) = 1;
+      C_pi = LtoC(L);
+      kappa_pi = C_pi.n_cols;
+      K_pi = kron(C_pi, H);
+      to_bar = kron(C_pi, eye<mat>(q,q));
+      if(i>=burn){
+        prox_store.slice(i-burn)=C_pi*C_pi.t();
+        L_store.slice(i-burn) = L;
+        kappa_pi_store(i-burn) = kappa_pi;
+      }
     }
-    C_pi = LtoC(L);
-    kappa_pi = C_pi.n_cols;
-    K_pi = kron(C_pi, H);
-    to_bar = kron(C_pi, eye<mat>(q,q));
-    if(i>=burn){
-      prox_store.slice(i-burn)=C_pi*C_pi.t();
-      L_store.slice(i-burn) = L;
-      kappa_pi_store(i-burn) = kappa_pi;
-    }
-    
     // Rcout << "C_pi updated" << endl;
     
     // update delta_pi

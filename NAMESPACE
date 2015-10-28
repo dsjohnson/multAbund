@@ -2,8 +2,12 @@
 
 export(get_opt_alpha_prior)
 export(make_data_list)
+export(make_inits)
+export(mult_abund_pois)
+export(mult_abund_probit)
 export(sugs)
 import(Rcpp)
+importFrom(NbClust,NbClust)
 importFrom(copula,Stirling1)
 importFrom(mvtnorm,dmvnorm)
 useDynLib(multAbund)

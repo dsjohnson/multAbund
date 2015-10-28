@@ -6,7 +6,7 @@ find_alpha=function(kappa, n){
 }
 
 #' @title Compute intial values for the abundance / occurence RJMCMC using an approximation of the SUGS algorithm
-#' @param design_matrices A list created by the make_data_list function.
+#' @param data_list A list created by the make_data_list function.
 #' @param log_alpha An intial guess at the log of the Dirichlet process parameter. Defaults to 0.
 #' @param phi_beta The prior variance parameter for the Normal prior for the fixed effect beta parameters
 #' @param mu_beta The prior mean for beta
@@ -25,31 +25,32 @@ find_alpha=function(kappa, n){
 #' @export
 
 sugs = function(
-  design_matrices,
+  data_list,
   log_alpha=0,
   phi_beta=10, 
   mu_beta, 
   phi_omega = 1, 
   df_omega = 1
 ){
-  data = design_matrices$data
-  n = data$count
-  H = design_matrices$H
-  X = design_matrices$X
-  groups = rep(1,max(data$species))
-  K_pi = kronecker(diag(max(data$species)), H)
+  data = data_list$data
+  n = data_list$n
+  H = data_list$H
+  X = data_list$X
+  groups = rep(1,max(data_list$data$species))
+  # K_pi = kronecker(diag(max(data$species)), H)
   #fit1 = glm(n ~ K_pi - 1, family="poisson")
   beta = solve(crossprod(X), crossprod(X, log(n+1)))
-  delta = solve(crossprod(K_pi), crossprod(K_pi, log(n+1)-X%*%beta))
-  delta_mat = matrix(delta, ncol=ncol(H), byrow=TRUE)
-  delta_mat = sweep(delta_mat, 2, apply(delta_mat, 2, mean), "-")
-  omega=optimize(
-    f=function(x, H, df_omega){
-      -sum(dmvnorm(delta_mat, rep(0,ncol(H)), x^2*solve(crossprod(H)),log=TRUE)) - 
-        dt(x, df_omega, log=TRUE)
-    }, 
-    interval=c(0,1000), H=H, df_omega=df_omega
-  )$minimum
+#   delta = solve(crossprod(K_pi), crossprod(K_pi, log(n+1)-X%*%beta))
+#   delta_mat = matrix(delta, ncol=ncol(H), byrow=TRUE)
+#   delta_mat = sweep(delta_mat, 2, apply(delta_mat, 2, mean), "-")
+  omega=2.85 
+#   optimize(
+#     f=function(x, H, df_omega){
+#       -sum(dmvnorm(delta_mat, rep(0,ncol(H)), x^2*solve(crossprod(H)),log=TRUE)) - 
+#         dt(x, df_omega, log=TRUE)
+#     }, 
+#     interval=c(0,1000), H=H, df_omega=df_omega
+#   )$minimum
   for(i in 2:max(data$species)){
     n_tmp = n[data$species%in%c(1:i)]
     X_tmp = X[data$species%in%c(1:i),]
@@ -96,9 +97,7 @@ sugs = function(
   K_pi = kronecker(C_pi, H)
   d = ncol(X_tmp) + ncol(K_pi)
   fit = glm(n ~ X + K_pi - 1, family="poisson")
-  #fit_lm = lm(log(n+1) ~ X + K_pi -1)
-  #sigma = sd(fit_lm$residuals)
-  sigma = rep(1.0e-4, ncol(design_matrices$D))
+  sigma = rep(1.0e-4, ncol(data_list$D))
   delta = fit$coef[-c(1:ncol(X))]
   beta = fit$coef[1:ncol(X)]
   delta[is.na(delta)] = 0

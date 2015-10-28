@@ -5,6 +5,7 @@
 
 using namespace Rcpp;
 using namespace arma;
+//using namespace R;
 
 // Function defs..
 int sample_du(arma::vec ppp);
@@ -22,6 +23,12 @@ double ln_crp(const double& log_alpha, const arma::mat& C_pi);
 arma::mat LtoC(const arma::mat& L);
 arma::mat rmult(const arma::vec& sigma, const arma::mat& X);
 
+double mylnpois(const int& n, const double& ln_lb){
+  return(n*ln_lb - exp(ln_lb));
+}
+double mylnnorm(const double& x, const double& mu, const double& sigma2){
+  return(-0.5*(x-mu)*(x-mu)/sigma2 - 0.5*log(sigma2) - 0.5*log(2*PI));
+}
 
 // [[Rcpp::export]]
 List mult_abund_mcmc(
@@ -37,6 +44,7 @@ List mult_abund_mcmc(
     const double& phi_sigma, 
     const int& df_sigma,
     const int& block, 
+    const int& begin_group_update,
     const int& burn, 
     const int& iter
 ) {
@@ -102,11 +110,11 @@ List mult_abund_mcmc(
   double tune_log_sigma = 2.4*2.4/log_sigma.n_elem;
   arma::mat pv_log_sigma = 0.1*eye(log_sigma.n_elem,log_sigma.n_elem);
   arma::mat L_log_sigma = chol(pv_log_sigma).t();
-  arma::vec sigma_z = exp(2*D*log_sigma);
-  arma::vec sigma_z_prop = sigma_z;
+  arma::vec sigma2_z = exp(2*D*log_sigma);
+  arma::vec sigma2_z_prop = sigma2_z;
   
   // Rcout << "C" << endl;
- 
+  
   // #omega items
   arma::mat HtH = H.t()*H;
   arma::mat HtH_inv = inv_sympd(HtH);
@@ -171,8 +179,6 @@ List mult_abund_mcmc(
   arma::mat tune_store(burn+iter, I*J);
   arma::vec z = log(n+1);
   arma::vec mu_z = X*beta + K_pi*delta_pi;
-  //arma::sp_mat I_IJ = sp_mat(eye<mat>(I*J,I*J));
-  // arma::sp_mat Sigma_z(I*J, I*J);
   
   // Rcout << "H" << endl;
   
@@ -181,7 +187,7 @@ List mult_abund_mcmc(
   arma::mat K_pi_pred;
   arma::vec mu_z_pred(X_pred.n_rows);
   arma::vec z_pred(X.n_rows);
-  arma::vec sigma_z_pred(D_pred.n_rows);
+  arma::vec sigma2_z_pred(D_pred.n_rows);
   
   // Rcout << "I" << endl;
   
@@ -193,10 +199,22 @@ List mult_abund_mcmc(
     //update z
     mu_z = X*beta + K_pi*delta_pi;
     z_prop = z + sqrt(tune_z)%sqrt(pv_z)%armaNorm(I*J);
-    MHR_z = exp( 
-      n%z_prop-exp(z_prop) - 0.5*((z_prop-mu_z)%(z_prop-mu_z))/sigma_z
-      -(n%z-exp(z))-(-0.5*((z-mu_z)%(z-mu_z))/sigma_z) 
-    );
+    //     MHR_z = exp( 
+    //       n%z_prop-exp(z_prop) - 0.5*((z_prop-mu_z)%(z_prop-mu_z))/sigma2_z
+    //       -(n%z-exp(z))-(-0.5*((z-mu_z)%(z-mu_z))/sigma2_z) 
+    //     );
+    for(int j=0; j<I*J; j++){
+      if(is_finite(n(j))){
+        z_prop(j) = z(j) + sqrt(tune_z(j))*sqrt(pv_z(j))*R::norm_rand();
+        MHR_z(j) = exp(
+          R::dpois(n(j), exp(z_prop(j)), 1) + R::dnorm(z_prop(j), mu_z(j), sqrt(sigma2_z(j)), 1)
+          - R::dpois(n(j), exp(z(j)), 1) - R::dnorm(z(j),mu_z(j),sqrt(sigma2_z(j)),1)
+        );
+      } else{
+        z_prop(j) = R::rnorm(mu_z(j),sqrt(sigma2_z(j)));
+        MHR_z(j) = 1.0;
+      }
+    }
     jump = find(armaU(I*J)<=MHR_z);
     z.elem(jump) = z_prop.elem(jump);
     i_uvec(0)=i;
@@ -214,53 +232,53 @@ List mult_abund_mcmc(
     tune_store.row(i) = (sqrt(tune_z)%sqrt(pv_z)).t();
     
     // update beta
-    V_beta_inv = X.t()*rmult(1/sigma_z,X) + Sigma_beta_inv;
-    v_beta = X.t()*((z - K_pi*delta_pi)/sigma_z) + Sigma_beta_inv*mu_beta;
+    V_beta_inv = X.t()*rmult(1/sigma2_z,X) + Sigma_beta_inv;
+    v_beta = X.t()*((z - K_pi*delta_pi)/sigma2_z) + Sigma_beta_inv*mu_beta;
     beta = GCN(V_beta_inv, v_beta);
     if(i>=burn) beta_store.row(i-burn) = beta.t();
     
     // Rcout << "beta updated" << endl;
-    
-    // update C_pi matrix
-    res = z-X*beta;
-    for(int k=1; k<I; k++){
-      ln_link_probs.set_size(k+1);
-      ln_link_probs.zeros();
-      for(int link=0; link<=k; link++){
+    if(i > begin_group_update){
+      // update C_pi matrix
+      res = z-X*beta;
+      for(int k=1; k<I; k++){
+        ln_link_probs.set_size(k+1);
+        ln_link_probs.zeros();
+        for(int link=0; link<=k; link++){
+          L.row(k) = zeros_row;
+          L(k,link) = 1;
+          C_pi = LtoC(L);
+          kappa_pi = C_pi.n_cols;
+          K_pi = kron(C_pi, H);
+          Sigma_delta_pi_inv = kron(eye<mat>(kappa_pi,kappa_pi), exp(-2*log_omega)*HtH);
+          V_delta_pi_inv = K_pi.t()*rmult(1/sigma2_z,K_pi) + Sigma_delta_pi_inv; 
+          delta_pi_hat = solve(V_delta_pi_inv, K_pi.t()*(res/sigma2_z));
+          ln_link_probs(link) = (kappa_pi*q/2)*log(2*PI) 
+            - 0.5*log(det(V_delta_pi_inv))
+            + ln_norm(res-K_pi*delta_pi_hat, sigma2_z) 
+            + ln_mvnorm(delta_pi_hat, Sigma_delta_pi_inv);
+        }
+        ln_link_probs -= max(ln_link_probs);
+        ln_link_probs(k) += log_alpha;
         L.row(k) = zeros_row;
-        L(k,link) = 1;
-        C_pi = LtoC(L);
-        kappa_pi = C_pi.n_cols;
-        K_pi = kron(C_pi, H);
-        Sigma_delta_pi_inv = kron(eye<mat>(kappa_pi,kappa_pi), exp(-2*log_omega)*HtH);
-        V_delta_pi_inv = K_pi.t()*rmult(1/sigma_z,K_pi) + Sigma_delta_pi_inv; 
-        delta_pi_hat = solve(V_delta_pi_inv, K_pi.t()*(res/sigma_z));
-        ln_link_probs(link) = (kappa_pi*q/2)*log(2*PI) 
-          - 0.5*log(det(V_delta_pi_inv))
-          + ln_norm(res-K_pi*delta_pi_hat, sigma_z) 
-          + ln_mvnorm(delta_pi_hat, Sigma_delta_pi_inv);
+        L(k,sample_du(exp(ln_link_probs))-1) = 1;
       }
-      ln_link_probs -= max(ln_link_probs);
-      ln_link_probs(k) += log_alpha;
-      L.row(k) = zeros_row;
-      L(k,sample_du(exp(ln_link_probs))-1) = 1;
+      C_pi = LtoC(L);
+      kappa_pi = C_pi.n_cols;
+      K_pi = kron(C_pi, H);
+      to_bar = kron(C_pi, eye<mat>(q,q));
+      if(i>=burn){
+        prox_store.slice(i-burn)=C_pi*C_pi.t();
+        L_store.slice(i-burn) = L;
+        kappa_pi_store(i-burn) = kappa_pi;
+      }
     }
-    C_pi = LtoC(L);
-    kappa_pi = C_pi.n_cols;
-    K_pi = kron(C_pi, H);
-    to_bar = kron(C_pi, eye<mat>(q,q));
-    if(i>=burn){
-      prox_store.slice(i-burn)=C_pi*C_pi.t();
-      L_store.slice(i-burn) = L;
-      kappa_pi_store(i-burn) = kappa_pi;
-    }
-    
     // Rcout << "C_pi updated" << endl;
     
     // update delta_pi
     Sigma_delta_pi_inv = kron(eye<mat>(kappa_pi,kappa_pi), exp(-2*log_omega)*HtH);
-    V_delta_pi_inv = K_pi.t()*rmult(1/sigma_z, K_pi) + Sigma_delta_pi_inv; 
-    v_delta_pi = K_pi.t()*((z-X*beta)/sigma_z);
+    V_delta_pi_inv = K_pi.t()*rmult(1/sigma2_z, K_pi) + Sigma_delta_pi_inv; 
+    v_delta_pi = K_pi.t()*((z-X*beta)/sigma2_z);
     delta_pi = GCN(V_delta_pi_inv, v_delta_pi);
     if(i>=burn) delta_bar_store.row(i-burn) = (to_bar*delta_pi).t(); 
     
@@ -316,16 +334,16 @@ List mult_abund_mcmc(
     // update sigma
     mu_z = X*beta + K_pi*delta_pi;
     log_sigma_prop = log_sigma + sqrt(tune_log_sigma)*L_log_sigma*armaNorm(log_sigma.n_elem);
-    sigma_z_prop = exp(2*D*log_sigma_prop);
+    sigma2_z_prop = exp(2*D*log_sigma_prop);
     MHR_sigma = exp(
-      ln_norm(z-mu_z, sigma_z_prop) + ln_t(exp(log_sigma_prop), phi_sigma, df_sigma) + sum(log_sigma_prop)
-      - ln_norm(z-mu_z, sigma_z) - ln_t(exp(log_sigma), phi_sigma, df_sigma) - sum(log_sigma)
+      ln_norm(z-mu_z, sigma2_z_prop) + ln_t(exp(log_sigma_prop), phi_sigma, df_sigma) + sum(log_sigma_prop)
+      - ln_norm(z-mu_z, sigma2_z) - ln_t(exp(log_sigma), phi_sigma, df_sigma) - sum(log_sigma)
     );
     if(R::runif(0,1) <= MHR_sigma){
       log_sigma = log_sigma_prop;
       //TEST
-      sigma_z = exp(2*D*log_sigma);
-      //Sigma_z_inv = diagmat(1/sigma_z);
+      sigma2_z = exp(2*D*log_sigma);
+      //sigma2_z_inv = diagmat(1/sigma2_z);
       //
       jump_sigma(i) = 1;
     }
@@ -346,8 +364,8 @@ List mult_abund_mcmc(
     if(i>=burn){
       K_pi_pred = kron(C_pi, H_pred);
       mu_z_pred = X_pred*beta + K_pi_pred*delta_pi;
-      sigma_z_pred = exp(D_pred*log_sigma);
-      z_pred = mu_z_pred + sigma_z_pred%armaNorm(X_pred.n_rows);
+      sigma2_z_pred = exp(D_pred*log_sigma);
+      z_pred = mu_z_pred + sigma2_z_pred%armaNorm(X_pred.n_rows);
       pred_store.row(i-burn) = exp(z_pred).t();
     }
     

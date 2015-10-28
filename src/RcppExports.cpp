@@ -7,8 +7,8 @@
 using namespace Rcpp;
 
 // mult_abund_mcmc
-List mult_abund_mcmc(const Rcpp::List& data_list, const Rcpp::List& pred_list, const Rcpp::List& initial_vals, const double& phi_beta, const arma::vec& mu_beta, const double& phi_omega, const int& df_omega, const double& a_alpha, const double& b_alpha, const double& phi_sigma, const int& df_sigma, const int& block, const int& burn, const int& iter);
-RcppExport SEXP multAbund_mult_abund_mcmc(SEXP data_listSEXP, SEXP pred_listSEXP, SEXP initial_valsSEXP, SEXP phi_betaSEXP, SEXP mu_betaSEXP, SEXP phi_omegaSEXP, SEXP df_omegaSEXP, SEXP a_alphaSEXP, SEXP b_alphaSEXP, SEXP phi_sigmaSEXP, SEXP df_sigmaSEXP, SEXP blockSEXP, SEXP burnSEXP, SEXP iterSEXP) {
+List mult_abund_mcmc(const Rcpp::List& data_list, const Rcpp::List& pred_list, const Rcpp::List& initial_vals, const double& phi_beta, const arma::vec& mu_beta, const double& phi_omega, const int& df_omega, const double& a_alpha, const double& b_alpha, const double& phi_sigma, const int& df_sigma, const int& block, const int& begin_group_update, const int& burn, const int& iter);
+RcppExport SEXP multAbund_mult_abund_mcmc(SEXP data_listSEXP, SEXP pred_listSEXP, SEXP initial_valsSEXP, SEXP phi_betaSEXP, SEXP mu_betaSEXP, SEXP phi_omegaSEXP, SEXP df_omegaSEXP, SEXP a_alphaSEXP, SEXP b_alphaSEXP, SEXP phi_sigmaSEXP, SEXP df_sigmaSEXP, SEXP blockSEXP, SEXP begin_group_updateSEXP, SEXP burnSEXP, SEXP iterSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
@@ -24,15 +24,16 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const double& >::type phi_sigma(phi_sigmaSEXP);
     Rcpp::traits::input_parameter< const int& >::type df_sigma(df_sigmaSEXP);
     Rcpp::traits::input_parameter< const int& >::type block(blockSEXP);
+    Rcpp::traits::input_parameter< const int& >::type begin_group_update(begin_group_updateSEXP);
     Rcpp::traits::input_parameter< const int& >::type burn(burnSEXP);
     Rcpp::traits::input_parameter< const int& >::type iter(iterSEXP);
-    __result = Rcpp::wrap(mult_abund_mcmc(data_list, pred_list, initial_vals, phi_beta, mu_beta, phi_omega, df_omega, a_alpha, b_alpha, phi_sigma, df_sigma, block, burn, iter));
+    __result = Rcpp::wrap(mult_abund_mcmc(data_list, pred_list, initial_vals, phi_beta, mu_beta, phi_omega, df_omega, a_alpha, b_alpha, phi_sigma, df_sigma, block, begin_group_update, burn, iter));
     return __result;
 END_RCPP
 }
 // mult_occ_mcmc
-List mult_occ_mcmc(const Rcpp::List& data_list, const Rcpp::List& pred_list, const Rcpp::List& initial_vals, const double& phi_beta, const arma::vec& mu_beta, const double& phi_omega, const int& df_omega, const double& a_alpha, const double& b_alpha, const int& block, const int& burn, const int& iter);
-RcppExport SEXP multAbund_mult_occ_mcmc(SEXP data_listSEXP, SEXP pred_listSEXP, SEXP initial_valsSEXP, SEXP phi_betaSEXP, SEXP mu_betaSEXP, SEXP phi_omegaSEXP, SEXP df_omegaSEXP, SEXP a_alphaSEXP, SEXP b_alphaSEXP, SEXP blockSEXP, SEXP burnSEXP, SEXP iterSEXP) {
+List mult_occ_mcmc(const Rcpp::List& data_list, const Rcpp::List& pred_list, const Rcpp::List& initial_vals, const double& phi_beta, const arma::vec& mu_beta, const double& phi_omega, const int& df_omega, const double& a_alpha, const double& b_alpha, const int& block, const int& begin_group_update, const int& burn, const int& iter);
+RcppExport SEXP multAbund_mult_occ_mcmc(SEXP data_listSEXP, SEXP pred_listSEXP, SEXP initial_valsSEXP, SEXP phi_betaSEXP, SEXP mu_betaSEXP, SEXP phi_omegaSEXP, SEXP df_omegaSEXP, SEXP a_alphaSEXP, SEXP b_alphaSEXP, SEXP blockSEXP, SEXP begin_group_updateSEXP, SEXP burnSEXP, SEXP iterSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
@@ -46,9 +47,10 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const double& >::type a_alpha(a_alphaSEXP);
     Rcpp::traits::input_parameter< const double& >::type b_alpha(b_alphaSEXP);
     Rcpp::traits::input_parameter< const int& >::type block(blockSEXP);
+    Rcpp::traits::input_parameter< const int& >::type begin_group_update(begin_group_updateSEXP);
     Rcpp::traits::input_parameter< const int& >::type burn(burnSEXP);
     Rcpp::traits::input_parameter< const int& >::type iter(iterSEXP);
-    __result = Rcpp::wrap(mult_occ_mcmc(data_list, pred_list, initial_vals, phi_beta, mu_beta, phi_omega, df_omega, a_alpha, b_alpha, block, burn, iter));
+    __result = Rcpp::wrap(mult_occ_mcmc(data_list, pred_list, initial_vals, phi_beta, mu_beta, phi_omega, df_omega, a_alpha, b_alpha, block, begin_group_update, burn, iter));
     return __result;
 END_RCPP
 }
