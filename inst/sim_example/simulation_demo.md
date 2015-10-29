@@ -16,6 +16,13 @@ These are the packages necessary for the execution. In addition a seed is set fo
 ```r
 library(multAbund)
 library(ggplot2)
+```
+
+```
+## Loading required package: methods
+```
+
+```r
 library(cowplot)
 ```
 
