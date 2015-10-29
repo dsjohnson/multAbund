@@ -1,4 +1,4 @@
 
-knitr::purl("simulation_demo.rmd")
-knitr::knit("simulation_demo.rmd")
-rmarkdown::render("simulation_demo.rmd")
+knitr::purl("simulation_demo.Rmd")
+knitr::knit("simulation_demo.Rmd")
+rmarkdown::render("simulation_demo.Rmd")
