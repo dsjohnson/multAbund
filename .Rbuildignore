@@ -1,0 +1,12 @@
+^.*\.Rproj$
+^\.Rproj\.user$
+^demo$
+^\.gitignore$
+^\.Rhistory$
+^inst/sim_example/simulation_demo\.rmd$
+^inst/sim_example/build_demo\.R$
+^inst/sim_example/cache$
+^inst/sim_example/figure$
+^inst/sim_example/build_demo\.Rout$
+^inst/sim_example/simulation_demo\.md$
+^inst/sim_example/\.RData$
