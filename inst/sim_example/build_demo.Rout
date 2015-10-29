@@ -1,0 +1,152 @@
+
+R version 3.2.2 (2015-08-14) -- "Fire Safety"
+Copyright (C) 2015 The R Foundation for Statistical Computing
+Platform: x86_64-apple-darwin13.4.0 (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> 
+> knitr::purl("simulation_demo.rmd")
+[1] "simulation_demo.R"
+> knitr::knit("simulation_demo.rmd")
+
+
+processing file: simulation_demo.rmd
+  |                                                                         |                                                                 |   0%  |                                                                         |....                                                             |   6%
+   inline R code fragments
+
+  |                                                                         |.......                                                          |  11%
+label: setup (with options) 
+List of 1
+ $ include: logi FALSE
+
+  |                                                                         |...........                                                      |  17%
+  ordinary text without R code
+
+  |                                                                         |..............                                                   |  22%
+label: unnamed-chunk-1
+  |                                                                         |..................                                               |  28%
+  ordinary text without R code
+
+  |                                                                         |......................                                           |  33%
+label: unnamed-chunk-2
+  |                                                                         |.........................                                        |  39%
+  ordinary text without R code
+
+  |                                                                         |.............................                                    |  44%
+label: unnamed-chunk-3
+  |                                                                         |................................                                 |  50%
+  ordinary text without R code
+
+  |                                                                         |....................................                             |  56%
+label: unnamed-chunk-4
+  |                                                                         |........................................                         |  61%
+  ordinary text without R code
+
+  |                                                                         |...........................................                      |  67%
+label: unnamed-chunk-5
+  |                                                                         |...............................................                  |  72%
+  ordinary text without R code
+
+  |                                                                         |...................................................              |  78%
+label: unnamed-chunk-6
+  |                                                                         |......................................................           |  83%
+  ordinary text without R code
+
+  |                                                                         |..........................................................       |  89%
+label: unnamed-chunk-7
+0                                                                                                   %
+|----|----|----|----|----|----|----|----|----|----|
+**************************************************|
+|
+  |                                                                         |.............................................................    |  94%
+  ordinary text without R code
+
+  |                                                                         |.................................................................| 100%
+label: unnamed-chunk-8 (with options) 
+List of 2
+ $ fig.width : num 8
+ $ fig.height: num 10
+
+
+output file: simulation_demo.md
+
+[1] "simulation_demo.md"
+> rmarkdown::render("simulation_demo.rmd")
+
+
+processing file: simulation_demo.rmd
+  |                                                                         |                                                                 |   0%  |                                                                         |....                                                             |   6%
+   inline R code fragments
+
+  |                                                                         |.......                                                          |  11%
+label: setup (with options) 
+List of 1
+ $ include: logi FALSE
+
+  |                                                                         |...........                                                      |  17%
+  ordinary text without R code
+
+  |                                                                         |..............                                                   |  22%
+label: unnamed-chunk-1
+  |                                                                         |..................                                               |  28%
+  ordinary text without R code
+
+  |                                                                         |......................                                           |  33%
+label: unnamed-chunk-2
+  |                                                                         |.........................                                        |  39%
+  ordinary text without R code
+
+  |                                                                         |.............................                                    |  44%
+label: unnamed-chunk-3
+  |                                                                         |................................                                 |  50%
+  ordinary text without R code
+
+  |                                                                         |....................................                             |  56%
+label: unnamed-chunk-4
+  |                                                                         |........................................                         |  61%
+  ordinary text without R code
+
+  |                                                                         |...........................................                      |  67%
+label: unnamed-chunk-5
+  |                                                                         |...............................................                  |  72%
+  ordinary text without R code
+
+  |                                                                         |...................................................              |  78%
+label: unnamed-chunk-6
+  |                                                                         |......................................................           |  83%
+  ordinary text without R code
+
+  |                                                                         |..........................................................       |  89%
+label: unnamed-chunk-7
+  |                                                                         |.............................................................    |  94%
+  ordinary text without R code
+
+  |                                                                         |.................................................................| 100%
+label: unnamed-chunk-8 (with options) 
+List of 2
+ $ fig.width : num 8
+ $ fig.height: num 10
+
+
+output file: simulation_demo.knit.md
+
+/usr/local/bin/pandoc +RTS -K512m -RTS simulation_demo.utf8.md --to html --from markdown+autolink_bare_uris+ascii_identifiers+tex_math_single_backslash-implicit_figures --output simulation_demo.html --smart --email-obfuscation none --self-contained --standalone --section-divs --template /Users/devin.johnson/Library/R/rmarkdown/rmd/h/default.html --variable 'theme:bootstrap' --include-in-header /var/folders/gm/z8gmx3rx6v1dy0q5dgq3sdy01810km/T//Rtmp8XebdG/rmarkdown-str5441a421084.html --mathjax --variable 'mathjax-url:https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML' --no-highlight --variable highlightjs=/Users/devin.johnson/Library/R/rmarkdown/rmd/h/highlight 
+
+Output created: simulation_demo.html
+> 
+> proc.time()
+   user  system elapsed 
+596.100 195.857 212.384 

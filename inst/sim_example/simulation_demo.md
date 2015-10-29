@@ -1,15 +1,48 @@
-## ------------------------------------------------------------------------
+---
+title: "Simulation demonstration of the `multAbund` package"
+author: "Devin S. Johnson"
+date: "2015-10-29"
+output: html_document
+---
+
+
+Here I present a realistic demonstration of the `multAbund` package for multivariate species distribution modeling.
+
+## 1. Preliminaries
+
+These are the packages necessary for the execution. In addition a seed is set for reproducability 
+
+
+```r
 library(multAbund)
 library(ggplot2)
 library(cowplot)
+```
+
+```
+## 
+## Attaching package: 'cowplot'
+## 
+## The following object is masked from 'package:ggplot2':
+## 
+##     ggsave
+```
+
+```r
 library(ggdendro)
 library(magrittr)
 library(reshape2)
 library(mvtnorm)
 
-set.seed(534)
+set.seed(555)
+```
 
-## ------------------------------------------------------------------------
+## 2. Simulation Design and Models
+
+Next we set up the design for the simulation. There are 20 species, 35 samples (of which 5 will be used for prediction), and 5 groups. In addition, I simulate 4 covariates `V1`,...,`V4`. The first 3 will be be used for clustering and the 4th (`V4`) will be an "effort" variable
+
+
+```r
 ### Design
 num_spec=20
 num_obs=35
@@ -19,8 +52,10 @@ env_dat = data.frame(obs=1:num_obs, V1=rnorm(num_obs), V2=rnorm(num_obs), V3=rno
 cnt_dat=data.frame(obs=rep(1:num_obs, each=num_spec), species=rep(1:num_spec, num_obs), count=NA)
 cnt_dat = merge(cnt_dat, env_dat)
 cnt_dat = with(cnt_dat, cnt_dat[order(species, obs), ])
+```
 
-## ------------------------------------------------------------------------
+
+```r
 ### Model
 delta_model = ~V1+V2+V3-1
 X_model = ~V1+V2+V3+V4
@@ -29,8 +64,14 @@ data_mats = make_data_list(delta_model = delta_model, X_model = X_model, data=cn
 C_pi = model.matrix(~group-1) 
 K_pi = kronecker(C_pi, data_mats$H)
 X = data_mats$X
+```
 
-## ------------------------------------------------------------------------
+## 3. Simulation
+
+Here the parameters and counts are simulated. 
+
+
+```r
 ### Parmeters
 omega = 1
 Omega = omega^2*solve(crossprod(data_mats$H))
@@ -40,16 +81,26 @@ beta = c(2,1,0,-1,0.5)
 
 z =  X%*%beta + K_pi%*%delta_pi 
 cnt_dat$count = rpois(n=length(z), exp(z))
+```
 
-## ------------------------------------------------------------------------
+## 4. The design matrix lists are created for the MCMC functions.
+
+
+```r
 data_mats = make_data_list(counts="count", delta_model = delta_model, 
                            X_model = X_model, data=cnt_dat[cnt_dat$obs<31,], 
                            sigma_model=~1)
 pred_mats = make_data_list(counts="count", delta_model = delta_model, 
                            X_model = X_model, data=cnt_dat, 
                            sigma_model=~1)
+```
 
-## ------------------------------------------------------------------------
+## 5. Prior paramters and initial values
+
+Here we define the prior distribution parameters and initial values. 
+
+
+```r
 fit0 = glm(count ~ 1, data=cnt_dat, family="poisson")
 
 #target0=function(n){return(rep(1/n, n))}
@@ -80,59 +131,41 @@ inits=sugs(
   phi_omega = phi_omega, 
   df_omega = df_omega
 )
+```
 
-## ---- echo=FALSE---------------------------------------------------------
-if(file.exists("../mcmc_cache/mcmc_cache.RData")){
-  load("../mcmc_cache/mcmc_cache.RData")
-} else {
-  block=200
-  burn=20000
-  iter=100000
-  
-  fit = mult_abund_pois(
-    data_list=data_mats,
-    pred_list=pred_mats,
-    initial_vals = inits,
-    phi_beta = phi_beta, 
-    mu_beta = mu_beta, 
-    phi_omega = phi_omega, 
-    df_omega = df_omega,
-    a_alpha=alpha_ab[1],
-    b_alpha=alpha_ab[2],
-    phi_sigma = phi_sigma,
-    df_sigma = df_sigma,
-    block = block, 
-    begin_group_update=5*block,
-    burn = burn, 
-    iter = iter
-  ) 
-  save(fit, file="../mcmc_cache/mcmc_cache.RData")
-}
+## 6. Model fitting via MCMC
 
-## ---- eval=FALSE---------------------------------------------------------
-#  block=200
-#  burn=20000
-#  iter=100000
-#  
-#  fit = mult_abund_pois(
-#    data_list=data_mats,
-#    pred_list=pred_mats,
-#    initial_vals = inits,
-#    phi_beta = phi_beta,
-#    mu_beta = mu_beta,
-#    phi_omega = phi_omega,
-#    df_omega = df_omega,
-#    a_alpha=alpha_ab[1],
-#    b_alpha=alpha_ab[2],
-#    phi_sigma = phi_sigma,
-#    df_sigma = df_sigma,
-#    block = block,
-#    begin_group_update=5*block,
-#    burn = burn,
-#    iter = iter
-#  )
+Here the model is fit via MCMC. Within the MCMC sampler, there is a mixture of Gibbs updates (i.e., full conditional distribution is a common distribution) and Metropolis-within-Gibbs (i.e., there is a proposal and accept/reject step). I used adaptive Metropolis proposals that are tuned every `block` iterations. In the following example, proposals are adjusted every `block=200` iterations.
 
-## ---- fig.width=8, fig.height=10-----------------------------------------
+
+```r
+block=200
+burn=2000
+iter=10000
+
+fit = mult_abund_pois(
+  data_list=data_mats,
+  pred_list=pred_mats,
+  initial_vals = inits,
+  phi_beta = phi_beta, 
+  mu_beta = mu_beta, 
+  phi_omega = phi_omega, 
+  df_omega = df_omega,
+  a_alpha=alpha_ab[1],
+  b_alpha=alpha_ab[2],
+  phi_sigma = phi_sigma,
+  df_sigma = df_sigma,
+  block = block, 
+  begin_group_update=5*block,
+  burn = burn, 
+  iter = iter
+) 
+```
+
+## 7. Bayesian cluster and fit inference
+
+
+```r
 # Posterior probability of shared group membership
 p1 = ggplot(aes(x=Var1, y=Var2), data=melt(apply(fit$prox, c(1,2), mean))) + geom_tile(aes(fill=value)) + labs(x=NULL, y=NULL) +
   labs(x=NULL, y=NULL) + scale_fill_gradient("", limits=c(0, 1))
@@ -156,7 +189,11 @@ p2 = ggplot() +
   ) + xlab(NULL)
 g1=plot_grid(p1, p2, labels = c("(A) Probability of shared membership", "(B) Estimated clusters"), hjust=0, ncol=1)
 print(g1)
+```
 
+![plot of chunk unnamed-chunk-8](figure/unnamed-chunk-8-1.png) 
+
+```r
 # Fit and prediction
 ind = cnt_dat$obs<31
 pred_data = data.frame(count=cnt_dat$count[!ind], pred=apply(fit$pred, 2, median)[!ind])
@@ -167,4 +204,6 @@ p4=ggplot(aes(x=count, y=fit), data=fit_data) + geom_point() + geom_abline(a=0,b
   xlab("Observed count") + ylab("Fitted count") 
 g2=plot_grid(p3, p4, labels = c("(A) Predicted values for unobserved data", "(B) Fitted vlues for observed data"), hjust=0, ncol=1)
 print(g2)
+```
 
+![plot of chunk unnamed-chunk-8](figure/unnamed-chunk-8-2.png) 
