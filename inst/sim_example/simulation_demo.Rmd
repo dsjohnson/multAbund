@@ -106,17 +106,7 @@ inits=make_inits(
   df_omega = 1,
   num_groups=6
 )
-
-# inits=sugs(
-#   data_list = data_mats,
-#   phi_beta = phi_beta, 
-#   mu_beta = mu_beta, 
-#   phi_omega = phi_omega, 
-#   df_omega = df_omega
-# )
-
 ```
-
 
 ## 6. Model fitting via MCMC
 
