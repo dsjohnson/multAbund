@@ -1,6 +1,5 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
-^demo$
 ^\.gitignore$
 ^\.Rhistory$
 ^inst/sim_example/simulation_demo\.rmd$

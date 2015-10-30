@@ -22,8 +22,6 @@ library(ggdendro)
 library(magrittr)
 library(reshape2)
 library(mvtnorm)
-
-set.seed(555)
 ```
 
 ## 2. Simulation Design and Models
@@ -45,7 +43,7 @@ cnt_dat = with(cnt_dat, cnt_dat[order(species, obs), ])
 ```{r}
 ### Model
 delta_model = ~V1+V2+V3-1
-X_model = ~V1+V2+V3+V4
+X_model = ~V4
 group = factor(rep(1:num_groups, group_comp))
 data_mats = make_data_list(delta_model = delta_model, X_model = X_model, data=cnt_dat, sigma_model=~1)
 C_pi = model.matrix(~group-1) 
@@ -59,11 +57,11 @@ Here the parameters and counts are simulated.
 
 ```{r}
 ### Parmeters
+set.seed(555)
 omega = 1
 Omega = omega^2*solve(crossprod(data_mats$H))
-delta_pi = rmvnorm(num_groups, sigma=Omega)
-delta_pi = as.vector(t(sweep(delta_pi, 2,  apply(delta_pi, 2, mean), "-")))
-beta = c(2,1,0,-1,0.5)
+delta_pi = as.vector(t(rmvnorm(num_groups, mean=c(1,0,-1), sigma=Omega)))
+beta = c(2,0.5)
 
 z =  X%*%beta + K_pi%*%delta_pi 
 cnt_dat$count = rpois(n=length(z), exp(z))
@@ -82,7 +80,7 @@ pred_mats = make_data_list(counts="count", delta_model = delta_model,
 
 ## 5. Prior paramters and initial values
 
-Here we define the prior distribution parameters and initial values. 
+Here we define the prior distribution parameters and initial values. To find the initial values, we will assume that all species belong to there own group, i.e., there are `num_species` groups. 
 
 ```{r}
 fit0 = glm(count ~ 1, data=cnt_dat, family="poisson")
@@ -100,22 +98,25 @@ df_omega = 1
 phi_sigma = 1
 df_sigma = 51
 
-# inits=make_inits(
+inits=make_inits(
+  data_list = data_mats,
+  phi_beta=10, 
+  mu_beta = c(fit0$coefficients, rep(0,ncol(X)-1)), 
+  phi_omega = 1, 
+  df_omega = 1,
+  num_groups=6
+)
+
+# inits=sugs(
 #   data_list = data_mats,
-#   phi_beta=10, 
-#   mu_beta = c(fit0$coefficients, rep(0,ncol(X)-1)), 
-#   phi_omega = 1, 
-#   df_omega = 1
+#   phi_beta = phi_beta, 
+#   mu_beta = mu_beta, 
+#   phi_omega = phi_omega, 
+#   df_omega = df_omega
 # )
 
-inits=sugs(
-  data_list = data_mats,
-  phi_beta = phi_beta, 
-  mu_beta = mu_beta, 
-  phi_omega = phi_omega, 
-  df_omega = df_omega
-)
 ```
+
 
 ## 6. Model fitting via MCMC
 
@@ -123,8 +124,8 @@ Here the model is fit via MCMC. Within the MCMC sampler, there is a mixture of G
 
 ```{r}
 block=200
-burn=20000
-iter=100000
+burn=10000
+iter=50000
 
 fit = mult_abund_pois(
   data_list=data_mats,
@@ -149,7 +150,8 @@ fit = mult_abund_pois(
 
 ```{r, fig.width=8, fig.height=10}
 # Posterior probability of shared group membership
-p1 = ggplot(aes(x=Var1, y=Var2), data=melt(apply(fit$prox, c(1,2), mean))) + geom_tile(aes(fill=value)) + labs(x=NULL, y=NULL) +
+prox = melt(apply(fit$prox, c(1,2), mean))
+p1 = ggplot(aes(x=Var1, y=Var2), data=prox) + geom_tile(aes(fill=value)) + labs(x=NULL, y=NULL) +
   labs(x=NULL, y=NULL) + scale_fill_gradient("", limits=c(0, 1))
 
 # Fitted clustering of species
