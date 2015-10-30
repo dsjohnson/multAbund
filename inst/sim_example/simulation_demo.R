@@ -86,8 +86,8 @@ inits=sugs(
 
 ## ------------------------------------------------------------------------
 block=200
-burn=2000
-iter=10000
+burn=20000
+iter=100000
 
 fit = mult_abund_pois(
   data_list=data_mats,

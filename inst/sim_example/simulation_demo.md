@@ -1,7 +1,7 @@
 ---
 title: "Simulation demonstration of the `multAbund` package"
 author: "Devin S. Johnson"
-date: "2015-10-29"
+date: "2015-10-30"
 output: html_document
 ---
 
@@ -16,13 +16,6 @@ These are the packages necessary for the execution. In addition a seed is set fo
 ```r
 library(multAbund)
 library(ggplot2)
-```
-
-```
-## Loading required package: methods
-```
-
-```r
 library(cowplot)
 ```
 
@@ -147,8 +140,8 @@ Here the model is fit via MCMC. Within the MCMC sampler, there is a mixture of G
 
 ```r
 block=200
-burn=2000
-iter=10000
+burn=20000
+iter=100000
 
 fit = mult_abund_pois(
   data_list=data_mats,
@@ -184,6 +177,13 @@ d <- as.dist(1-apply(fit$prox, c(1,2), mean))
 hc = hclust(d, method="complete") 
 dendr    <- dendro_data(hc, type="rectangle") 
 clust    <- cutree(hc,k=kappa)                   
+```
+
+```
+## Error in cutree(hc, k = kappa): elements of 'k' must be between 1 and 20
+```
+
+```r
 clust.df <- data.frame(label=1:20, cluster=factor(clust))
 dendr[["labels"]] <- merge(dendr[["labels"]],clust.df, by="label")
 p2 = ggplot() + 

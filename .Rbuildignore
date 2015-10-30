@@ -10,3 +10,4 @@
 ^inst/sim_example/build_demo\.Rout$
 ^inst/sim_example/simulation_demo\.md$
 ^inst/sim_example/\.RData$
+^inst/sim_example/simulation_demo_files$
