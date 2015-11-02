@@ -4,10 +4,16 @@ author: "Devin S. Johnson"
 date: "`r Sys.Date()`"
 output: html_document
 ---
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(cache=TRUE)
+```{r global-options, include=FALSE}
+# set global chunk options
+library(knitr)
+options(digits=2)
+options(width=80)
+opts_chunk$set(cache=TRUE, autodep=TRUE)
+opts_chunk$set(dev="png",
+               dev.args=list(type="cairo",antialias="none"),
+               dpi=192)
 ```
-
 Here I present a realistic demonstration of the `multAbund` package for multivariate species distribution modeling.
 
 ## 1. Preliminaries
@@ -58,9 +64,11 @@ Here the parameters and counts are simulated.
 ```{r}
 ### Parmeters
 set.seed(555)
-omega = 1
+omega = 2
 Omega = omega^2*solve(crossprod(data_mats$H))
-delta_pi = as.vector(t(rmvnorm(num_groups, mean=c(1,0,-1), sigma=Omega)))
+delta_pi = rmvnorm(num_groups, sigma=Omega)
+delta_pi = sweep(delta_pi, 2, colMeans(delta_pi))
+delta_pi = as.vector(t(delta_pi))
 beta = c(2,0.5)
 
 z =  X%*%beta + K_pi%*%delta_pi 
@@ -104,7 +112,7 @@ inits=make_inits(
   mu_beta = c(fit0$coefficients, rep(0,ncol(X)-1)), 
   phi_omega = 1, 
   df_omega = 1,
-  num_groups=6
+  num_groups=num_spec
 )
 ```
 
@@ -114,8 +122,8 @@ Here the model is fit via MCMC. Within the MCMC sampler, there is a mixture of G
 
 ```{r}
 block=200
-burn=10000
-iter=50000
+burn=20000
+iter=100000
 
 fit = mult_abund_pois(
   data_list=data_mats,
