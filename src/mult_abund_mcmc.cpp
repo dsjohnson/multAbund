@@ -23,13 +23,6 @@ double ln_crp(const double& log_alpha, const arma::mat& C_pi);
 arma::mat LtoC(const arma::mat& L);
 arma::mat rmult(const arma::vec& sigma, const arma::mat& X);
 
-double mylnpois(const int& n, const double& ln_lb){
-  return(n*ln_lb - exp(ln_lb));
-}
-double mylnnorm(const double& x, const double& mu, const double& sigma2){
-  return(-0.5*(x-mu)*(x-mu)/sigma2 - 0.5*log(sigma2) - 0.5*log(2*PI));
-}
-
 // [[Rcpp::export]]
 List mult_abund_mcmc(
     const Rcpp::List& data_list,
@@ -126,7 +119,6 @@ List mult_abund_mcmc(
   double r_omega;
   double tune_log_omega = 2.4*2.4;
   double pv_log_omega = 1;
-  //arma::mat omega_store(iter, p, fill::zeros);
   
   // Rcout << "D" << endl;
   

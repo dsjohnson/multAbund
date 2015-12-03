@@ -1,15 +1,21 @@
 
-foo = function(x, n, k, mu, phi){
-  exp(k*log(x) + lgamma(x) - lgamma(x+n) + dgamma(x, mu, phi, log=TRUE))  #
+foo = function(x, n, k, a, b){
+  abs(copula::Stirling1(n,k)) * exp(k*log(x) + lgamma(x) - lgamma(x+n) + dgamma(x, a, b, log=TRUE))  #
 }
 
 #' @importFrom copula Stirling1
-group_dist = function(n, mu=0, phi=1.5){
+group_dist = function(n, a, b){
   out=rep(NA, n)
+  ul = qgamma(0.999, a, b)
+  ll = qgamma(0.001, a, b)
   for(k in 1:n){
-    out[k] = abs(copula::Stirling1(n,k))*integrate(foo, 0, Inf, n=n, k=k, phi=phi, mu=mu)$value
+    out[k] = integrate(foo, 0, Inf, n=n, k=k, a=a, b=b, stop.on.error = FALSE)$value
   }
   return(out/sum(out))
+}
+
+dkl = function(g, tgt){
+  sum(tgt*(log(tgt)-log(g)))
 }
 
 #' @title Obtain parameters for gamma prior such that the distribution of the number of groups is equal to the \code{target} argument
@@ -24,8 +30,10 @@ group_dist = function(n, mu=0, phi=1.5){
 
 get_opt_alpha_prior = function(n, target=NULL){
   if(is.null(target)) target = function(n){x = 1/c(1:n); return(x/sum(x))}
-  ab = optim(c(0.3,0.02), function(par, n, target){sum(abs(group_dist(n,par[1],par[2]) - target(n))^2)}, 
-             n=n, target=target, lower=c(0.1,0.0005), method="L-BFGS-B")$par
+  ab = exp(optim(c(log(0.4),log(0.01)), 
+             function(par, n, target){
+               return(dkl(group_dist(n,exp(par[1]),exp(par[2])), target(n)))
+             }, n=n, target=target)$par)
   return(
     list(
       ab=ab,

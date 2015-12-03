@@ -35,7 +35,6 @@
 #' code it will take some time. 
 #' @author Devin S. Johnson
 #' @export
-#' 
 mult_abund_pois = function(data_list, pred_list, initial_vals, phi_beta, 
                            mu_beta, phi_omega, df_omega, a_alpha, b_alpha, 
                            phi_sigma, df_sigma, block, begin_group_update, 
@@ -96,7 +95,6 @@ mult_abund_pois = function(data_list, pred_list, initial_vals, phi_beta,
 #' code it will take some time. 
 #' @author Devin S. Johnson
 #' @export
-#' 
 mult_abund_probit = function(data_list, pred_list, initial_vals, phi_beta, 
                              mu_beta, phi_omega, df_omega, a_alpha, b_alpha, 
                              block, begin_group_update, 

@@ -3,7 +3,6 @@
 #' The demo is similar to a vigette but it takes much too long to build. 
 #' @author Devin S. Johnson
 #' @export
-#' 
 view_example = function(){
   lib_loc = system.file(package="multAbund")
   browseURL(paste0('file://', file.path(lib_loc, "sim_example/simulation_demo.html")))

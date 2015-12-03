@@ -1,15 +1,32 @@
 Package: multAbund
 Type: Package
-Title: Model Multivariate Abundance and Occurence Using the Dirichlet Process Prior
+Title: Model Multivariate Abundance and Occurence Using the Dirichlet Process
+    Prior
 Version: 0.01
 Date: 2015-10-28
 Author: Devin S. Johnson
 Maintainer: Devin S. Johnson <devin.johnson@noaa.gov>
-Description: This package provides RJMCMC samplers to make Bayesian inference for Joint Species Distribution models (JSDM) using a Dirichlet Process clustering method. The DP clustering method allows species to be grouped into functional guilds for modeling between species associations in abundance or occurance values at surveyed sites. 
+Description: This package provides RJMCMC samplers to make Bayesian inference
+    for Joint Species Distribution models (JSDM) using a Dirichlet Process
+    clustering method. The DP clustering method allows species to be grouped into
+    functional guilds for modeling between species associations in abundance or
+    occurance values at surveyed sites.
 License: CC0
-Imports: Rcpp, copula, mvtnorm, NbClust
-Suggests: ggplot2, cowplot, magrittr, reshape2, knitr, rmarkdown, ggdendro
+Imports:
+    Rcpp,
+    copula,
+    mvtnorm,
+    NbClust
+Suggests:
+    ggplot2,
+    cowplot,
+    magrittr,
+    reshape2,
+    knitr,
+    rmarkdown,
+    ggdendro
 LinkingTo: Rcpp, RcppArmadillo, RcppProgress
 ByteCompile: TRUE
 NeedsCompilation: yes
 VignetteBuilder: knitr
+RoxygenNote: 5.0.0

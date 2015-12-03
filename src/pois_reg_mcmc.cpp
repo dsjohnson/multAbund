@@ -62,8 +62,8 @@ List pois_reg_mcmc(
   double tune_log_sigma = 2.4*2.4/log_sigma.n_elem;
   arma::mat pv_log_sigma = 0.1*eye(log_sigma.n_elem,log_sigma.n_elem);
   arma::mat L_log_sigma = chol(pv_log_sigma).t();
-  arma::vec sigma_z = exp(2*D*log_sigma);
-  arma::vec sigma_z_prop = sigma_z;
+  arma::vec sigma2_z = exp(2*D*log_sigma);
+  arma::vec sigma2_z_prop = sigma2_z;
   
   // Rcout << "1" << endl;
   
@@ -100,7 +100,7 @@ List pois_reg_mcmc(
   arma::mat K_pi_pred;
   arma::vec mu_z_pred(X_pred.n_rows);
   arma::vec z_pred(X.n_rows);
-  arma::vec sigma_z_pred(D_pred.n_rows);
+  arma::vec sigma2_z_pred(D_pred.n_rows);
   
   // Rcout << "4" << endl;
   
@@ -112,10 +112,18 @@ List pois_reg_mcmc(
     //update z
     mu_z = X*beta;
     z_prop = z + sqrt(tune_z)%sqrt(pv_z)%armaNorm(I);
-    MHR_z = exp( 
-      n%z_prop-exp(z_prop) - 0.5*((z_prop-mu_z)%(z_prop-mu_z))/sigma_z
-      -(n%z-exp(z))-(-0.5*((z-mu_z)%(z-mu_z))/sigma_z) 
-    );
+    for(int j=0; j<I; j++){
+      if(is_finite(n(j))){
+        z_prop(j) = z(j) + sqrt(tune_z(j))*sqrt(pv_z(j))*R::norm_rand();
+        MHR_z(j) = exp(
+          R::dpois(n(j), exp(z_prop(j)), 1) + R::dnorm(z_prop(j), mu_z(j), sqrt(sigma2_z(j)), 1)
+          - R::dpois(n(j), exp(z(j)), 1) - R::dnorm(z(j),mu_z(j),sqrt(sigma2_z(j)),1)
+        );
+      } else{
+        z_prop(j) = R::rnorm(mu_z(j),sqrt(sigma2_z(j)));
+        MHR_z(j) = 1.0;
+      }
+    }
     jump = find(armaU(I)<=MHR_z);
     z.elem(jump) = z_prop.elem(jump);
     i_uvec(0)=i;
@@ -133,8 +141,8 @@ List pois_reg_mcmc(
     tune_store.row(i) = (sqrt(tune_z)%sqrt(pv_z)).t();
     
     // update beta
-    V_beta_inv = X.t()*rmult(1/sigma_z,X) + Sigma_beta_inv;
-    v_beta = X.t()*(z/sigma_z) + Sigma_beta_inv*mu_beta;
+    V_beta_inv = X.t()*rmult(1/sigma2_z,X) + Sigma_beta_inv;
+    v_beta = X.t()*(z/sigma2_z) + Sigma_beta_inv*mu_beta;
     beta = GCN(V_beta_inv, v_beta);
     if(i>=burn) beta_store.row(i-burn) = beta.t();
     
@@ -143,14 +151,14 @@ List pois_reg_mcmc(
     // update sigma
     mu_z = X*beta;
     log_sigma_prop = log_sigma + sqrt(tune_log_sigma)*L_log_sigma*armaNorm(log_sigma.n_elem);
-    sigma_z_prop = exp(2*D*log_sigma_prop);
+    sigma2_z_prop = exp(2*D*log_sigma_prop);
     MHR_sigma = exp(
-      ln_norm(z-mu_z, sigma_z_prop) + ln_t(exp(log_sigma_prop), phi_sigma, df_sigma) + sum(log_sigma_prop)
-      - ln_norm(z-mu_z, sigma_z) - ln_t(exp(log_sigma), phi_sigma, df_sigma) - sum(log_sigma)
+      ln_norm(z-mu_z, sigma2_z_prop) + ln_t(exp(log_sigma_prop), phi_sigma, df_sigma) + sum(log_sigma_prop)
+      - ln_norm(z-mu_z, sigma2_z) - ln_t(exp(log_sigma), phi_sigma, df_sigma) - sum(log_sigma)
     );
     if(R::runif(0,1) <= MHR_sigma){
       log_sigma = log_sigma_prop;
-      sigma_z = exp(2*D*log_sigma);
+      sigma2_z = exp(2*D*log_sigma);
       jump_sigma(i) = 1;
     }
     log_sigma_store.row(i) = log_sigma.t();
@@ -168,8 +176,8 @@ List pois_reg_mcmc(
     // make prediction
     if(i>=burn){
       mu_z_pred = X_pred*beta;
-      sigma_z_pred = exp(D_pred*log_sigma);
-      z_pred = mu_z_pred + sigma_z_pred%armaNorm(X_pred.n_rows);
+      sigma2_z_pred = exp(D_pred*log_sigma);
+      z_pred = mu_z_pred + sigma2_z_pred%armaNorm(X_pred.n_rows);
       pred_store.row(i-burn) = exp(z_pred).t();
     }
     

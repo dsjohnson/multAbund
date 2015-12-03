@@ -41,7 +41,7 @@ make_inits = function(
     resp = data_list$n
     family = "poisson"
   } else{
-    data$resp = data_list$y
+    resp = data_list$y
     family = binomial(link = "probit")
   }
   H = data_list$H
@@ -90,7 +90,7 @@ make_inits = function(
     list(
       beta=beta,
       delta=delta,
-      groups=groups,
+      groups=as.integer(groups),
       omega=omega,
       sigma=sigma, 
       log_alpha=log(alpha)

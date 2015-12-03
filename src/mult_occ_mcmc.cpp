@@ -85,8 +85,8 @@ List mult_occ_mcmc(
   arma::mat K_pi = kron(C_pi, H);
   arma::vec res(I*J);
   arma::vec delta_pi_hat;
-  arma::vec kappa_pi_store(iter);
-  
+  arma::vec kappa_pi_store(iter, fill::zeros);
+  kappa_pi_store += kappa_pi;
   // Rcout << "B" << endl;
   
   // #omega items
@@ -100,7 +100,6 @@ List mult_occ_mcmc(
   double r_omega;
   double tune_log_omega = 2.4*2.4;
   double pv_log_omega = 1;
-  //arma::mat omega_store(iter, p, fill::zeros);
   
   // Rcout << "D" << endl;
   
@@ -140,18 +139,9 @@ List mult_occ_mcmc(
   
   // #z items
   arma::vec z_prop(I*J);
-  arma::vec U(I*J);
-  arma::vec MHR_z(I*J);
-  arma::mat jump_z(iter+burn, I*J, fill::zeros);
-  arma::uvec jump;
-  arma::vec tune_z(I*J);
-  tune_z.fill(2.4*2.4);
-  arma::vec pv_z(I*J, fill::ones);
-  arma::mat z_store(iter+burn, I*J);
+  arma::mat z_store(iter, I*J);
   arma::vec r_z(I*J);
-  arma::uvec i_uvec(1);
-  arma::mat tune_store(burn+iter, I*J);
-  arma::vec z = 2*y - 1;
+  arma::vec z(y.n_elem);
   arma::vec mu_z = X*beta + K_pi*delta_pi;
   arma::vec a(y.n_elem);
   arma::vec b(y.n_elem);
@@ -184,7 +174,7 @@ List mult_occ_mcmc(
     //update z
     mu_z = X*beta + K_pi*delta_pi;
     z = arma_rtruncnorm(mu_z,a,b);
-    z_store.row(i) = z.t();
+    if(i>=burn) z_store.row(i-burn) = z.t();
     
     // Rcout << "z updated" << endl;
     
@@ -300,7 +290,7 @@ List mult_occ_mcmc(
   }
   
   return Rcpp::List::create(
-    Rcpp::Named("z") = z_store.rows(burn, burn+iter-1),
+    Rcpp::Named("z") = z_store,
     Rcpp::Named("beta") = beta_store,
     Rcpp::Named("delta_bar") = delta_bar_store, 
     Rcpp::Named("prox") = prox_store,
