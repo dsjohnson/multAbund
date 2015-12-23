@@ -52,6 +52,10 @@ before the groups begin updating.}
 
 \item{iter}{Number of iterations retained for posterior inference.}
 }
+\description{
+Fit a Dirichlet Process random effect model for joint species distribution inference of Poisson count data using 
+a RJMCMC procedure.
+}
 \details{
 Here are some details.
 }

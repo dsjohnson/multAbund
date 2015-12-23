@@ -23,6 +23,7 @@ arma::mat rmult(const arma::vec& sigma, const arma::mat& X);
 List pois_reg_mcmc(
     const Rcpp::List& data_list,
     const Rcpp::List& pred_list,
+    const arma::vec& beta_inits,
     const double& phi_beta, 
     const arma::vec& mu_beta,
     const double& phi_sigma, 
@@ -72,7 +73,7 @@ List pois_reg_mcmc(
   arma::mat  V_beta_inv(p,p);
   arma::vec v_beta(p);
   arma::vec beta(X.n_cols);
-  beta = solve(X.t()*X, X.t()*log(n+0.5));
+  beta = beta_inits; //solve(X.t()*X, X.t()*log(n+0.5));
   arma::mat beta_store(iter, p);
   
   // Rcout << "2" << endl;

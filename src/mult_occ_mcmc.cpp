@@ -187,7 +187,7 @@ List mult_occ_mcmc(
     // Rcout << "beta updated" << endl;
     
     // update C_pi matrix
-    if(i > begin_group_update){
+    if(i >= begin_group_update){
       res = z-X*beta;
       for(int k=1; k<I; k++){
         ln_link_probs.set_size(k+1);

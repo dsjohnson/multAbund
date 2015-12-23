@@ -9,7 +9,11 @@ mult_occ_mcmc <- function(data_list, pred_list, initial_vals, phi_beta, mu_beta,
     .Call('multAbund_mult_occ_mcmc', PACKAGE = 'multAbund', data_list, pred_list, initial_vals, phi_beta, mu_beta, phi_omega, df_omega, a_alpha, b_alpha, block, begin_group_update, burn, iter)
 }
 
-pois_reg_mcmc <- function(data_list, pred_list, phi_beta, mu_beta, phi_sigma, df_sigma, block, burn, iter) {
-    .Call('multAbund_pois_reg_mcmc', PACKAGE = 'multAbund', data_list, pred_list, phi_beta, mu_beta, phi_sigma, df_sigma, block, burn, iter)
+pois_reg_mcmc <- function(data_list, pred_list, beta_inits, phi_beta, mu_beta, phi_sigma, df_sigma, block, burn, iter) {
+    .Call('multAbund_pois_reg_mcmc', PACKAGE = 'multAbund', data_list, pred_list, beta_inits, phi_beta, mu_beta, phi_sigma, df_sigma, block, burn, iter)
+}
+
+probit_reg_mcmc <- function(data_list, pred_list, beta_inits, phi_beta, mu_beta, burn, iter) {
+    .Call('multAbund_probit_reg_mcmc', PACKAGE = 'multAbund', data_list, pred_list, beta_inits, phi_beta, mu_beta, burn, iter)
 }
 

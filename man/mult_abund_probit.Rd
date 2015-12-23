@@ -3,7 +3,9 @@
 \name{mult_abund_probit}
 \alias{mult_abund_probit}
 \title{Perform RJMCMC for posterior sampling of multivariate cluster occurence 
-model with Bernoulli observations}
+model with Bernoulli observations
+#' @description Fit a Dirichlet Process random effect model for joint species distribution inference of binary occurence data using 
+a RJMCMC procedure.}
 \usage{
 mult_abund_probit(data_list, pred_list, initial_vals, phi_beta, mu_beta,
   phi_omega, df_omega, a_alpha, b_alpha, block, begin_group_update, burn, iter)
@@ -49,13 +51,6 @@ before the groups begin updating.}
 }
 \details{
 Here are some details.
-}
-\section{Vignette}{
-
-A demonstration using simulated data is available in vignette form and can be accessed 
-by typing \verb{vignette("simulation_demo", package="multAbund")}. The vignette demo 
-uses a realistic number of iterations, so, if the user decides to run the associated \verb{R}
-code it will take some time.
 }
 \author{
 Devin S. Johnson

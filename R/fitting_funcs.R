@@ -1,5 +1,7 @@
 #' @title Perform RJMCMC for posterior sampling of multivariate cluster abundance model with Poisson
 #' observations
+#' @description Fit a Dirichlet Process random effect model for joint species distribution inference of Poisson count data using 
+#' a RJMCMC procedure.
 #' @param data_list A named list created of data items created from user data with the 
 #' function \code{multAbund::make_data_list}. This data will be used for model fitting.
 #' @param pred_list A named list created in the same way as \code{data_list}, however, 
@@ -62,6 +64,8 @@ mult_abund_pois = function(data_list, pred_list, initial_vals, phi_beta,
 
 #' @title Perform RJMCMC for posterior sampling of multivariate cluster occurence 
 #' model with Bernoulli observations
+#' #' @description Fit a Dirichlet Process random effect model for joint species distribution inference of binary occurence data using 
+#' a RJMCMC procedure.
 #' @param data_list A named list created of data items created from user data with the 
 #' function \code{multAbund::make_data_list}. This data will be used for model fitting.
 #' @param pred_list A named list created in the same way as \code{data_list}, however, 
@@ -88,11 +92,6 @@ mult_abund_pois = function(data_list, pred_list, initial_vals, phi_beta,
 #' @param burn Number of burnin iterations that are discarded.
 #' @param iter Number of iterations retained for posterior inference.
 #' @details Here are some details.
-#' @section Vignette:
-#' A demonstration using simulated data is available in vignette form and can be accessed 
-#' by typing \verb{vignette("simulation_demo", package="multAbund")}. The vignette demo 
-#' uses a realistic number of iterations, so, if the user decides to run the associated \verb{R}
-#' code it will take some time. 
 #' @author Devin S. Johnson
 #' @export
 mult_abund_probit = function(data_list, pred_list, initial_vals, phi_beta, 
@@ -111,6 +110,74 @@ mult_abund_probit = function(data_list, pred_list, initial_vals, phi_beta,
     b_alpha=b_alpha, 
     block=block, 
     begin_group_update=begin_group_update, 
+    burn=burn, 
+    iter=iter
+  )
+  return(out)
+}
+
+#' @title Probit regression via MCMC
+#' @description Fit a probit regression model via MCMC using data augmentation.
+#' @param data_list A named list created of data items created from user data with the 
+#' function \code{multAbund::make_data_list}. This data will be used for model fitting.
+#' @param pred_list A named list created in the same way as \code{data_list}, however, 
+#' this list will be used for prediction purposes. For example, a user may want to withold
+#' data in a cross-validation check.
+#' @param phi_beta Scale parameter for the prior covariance of \verb{beta}. The covariance 
+#' is defined to be \verb{phi_beta^2*solve(X'X)}, where \code{X} is the design matrix 
+#' for the covariates associated with \verb{beta}
+#' @param mu_beta Prior mean of \verb{beta}.
+#' @param burn Number of burnin iterations that are discarded.
+#' @param iter Number of iterations retained for posterior inference.
+#' @author Devin S. Johnson
+#' @export
+probit_reg = function(data_list, pred_list, phi_beta, 
+                             mu_beta, burn, iter){
+  inits = glm(data_list$y ~ data_list$X-1, family=binomial("probit"))$coef
+  inits = ifelse(is.na(inits), 0, inits)
+  out = probit_reg_mcmc(
+    data_list=data_list, 
+    pred_list=pred_list, 
+    beta_inits=inits,
+    phi_beta=phi_beta, 
+    mu_beta=mu_beta, 
+    burn=burn, 
+    iter=iter
+  )
+  return(out)
+}
+
+#' @title Probit regression via MCMC
+#' @description Fit a Poisson regression model with normal randome effect for modeling overdispersion.
+#' @param data_list A named list created of data items created from user data with the 
+#' function \code{multAbund::make_data_list}. This data will be used for model fitting.
+#' @param pred_list A named list created in the same way as \code{data_list}, however, 
+#' this list will be used for prediction purposes. For example, a user may want to withold
+#' data in a cross-validation check.
+#' @param phi_beta Scale parameter for the prior covariance of \verb{beta}. The covariance 
+#' is defined to be \verb{phi_beta^2*solve(X'X)}, where \code{X} is the design matrix 
+#' for the covariates associated with \verb{beta}
+#' @param mu_beta Prior mean of \verb{beta}.
+#' @param phi_sigma Scale parameter for the half-t prior distribution for \verb{sigma}.
+#' @param df_sigma Degrees of freedom for \verb{sigma} prior. Follows the same rules as the omega prior specification.
+#' @param block Number of iterations between Metropolis proposal adaptation.
+#' @param burn Number of burnin iterations that are discarded.
+#' @param iter Number of iterations retained for posterior inference.
+#' @author Devin S. Johnson
+#' @export
+pois_reg = function(data_list, pred_list, phi_beta, 
+                      mu_beta, phi_sigma, df_sigma, block, burn, iter){
+  inits = glm(data_list$n ~ data_list$X-1, family="poisson")$coef
+  inits = ifelse(is.na(inits), 0, inits)
+  out = pois_reg_mcmc(
+    data_list=data_list, 
+    pred_list=pred_list, 
+    beta_inits=inits,
+    phi_beta=phi_beta, 
+    mu_beta=mu_beta, 
+    phi_sigma=phi_sigma,
+    df_sigma=df_sigma,
+    block=block,
     burn=burn, 
     iter=iter
   )

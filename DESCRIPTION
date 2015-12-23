@@ -13,7 +13,6 @@ Description: This package provides RJMCMC samplers to make Bayesian inference
     occurance values at surveyed sites.
 License: CC0
 Imports:
-    Rcpp,
     copula,
     mvtnorm,
     NbClust
