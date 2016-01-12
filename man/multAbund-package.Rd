@@ -19,8 +19,8 @@ The vignette can be viewed with the command:
 \tabular{ll}{ 
 Package: \tab multAbund\cr 
 Type: \tab Package\cr 
-Version: \tab 0.01\cr 
-Date: \tab October 28, 2015\cr 
+Version: \tab 0.02\cr 
+Date: \tab January 12, 2016\cr 
 License: \tab CC0 \cr 
 LazyLoad: \tab yes\cr 
 }
