@@ -15,7 +15,8 @@ License: CC0
 Imports:
     copula,
     mvtnorm,
-    NbClust
+    NbClust,
+    Rcpp
 Suggests:
     ggplot2,
     cowplot,

@@ -26,7 +26,7 @@
 #' 
 #' Maintainer: Devin S. Johnson <devin.johnson@@noaa.gov>
 #'
-## #' @importFrom Rcpp evalCpp
+###' @importFrom Rcpp evalCpp
 #' @useDynLib multAbund
 
 NULL
