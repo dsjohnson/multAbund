@@ -63,7 +63,7 @@ List pois_reg_mcmc(
   double tune_log_sigma = 2.4*2.4/log_sigma.n_elem;
   arma::mat pv_log_sigma = 0.1*eye(log_sigma.n_elem,log_sigma.n_elem);
   arma::mat L_log_sigma = chol(pv_log_sigma).t();
-  arma::vec sigma2_z = exp(2*D*log_sigma);
+  arma::vec sigma2_z = exp(2*D*log_sigma) + 1.0E-8;
   arma::vec sigma2_z_prop = sigma2_z;
   
   // Rcout << "1" << endl;
@@ -152,14 +152,14 @@ List pois_reg_mcmc(
     // update sigma
     mu_z = X*beta;
     log_sigma_prop = log_sigma + sqrt(tune_log_sigma)*L_log_sigma*armaNorm(log_sigma.n_elem);
-    sigma2_z_prop = exp(2*D*log_sigma_prop);
+    sigma2_z_prop = exp(2*D*log_sigma_prop) + 1.0E-8;
     MHR_sigma = exp(
       ln_norm(z-mu_z, sigma2_z_prop) + ln_t(exp(log_sigma_prop), phi_sigma, df_sigma) + sum(log_sigma_prop)
       - ln_norm(z-mu_z, sigma2_z) - ln_t(exp(log_sigma), phi_sigma, df_sigma) - sum(log_sigma)
     );
     if(R::runif(0,1) <= MHR_sigma){
       log_sigma = log_sigma_prop;
-      sigma2_z = exp(2*D*log_sigma);
+      sigma2_z =sigma2_z_prop;
       jump_sigma(i) = 1;
     }
     log_sigma_store.row(i) = log_sigma.t();

@@ -29,7 +29,5 @@ LazyLoad: \tab yes\cr
 Devin S. Johnson
 
 Maintainer: Devin S. Johnson <devin.johnson@noaa.gov>
-
- @import Rcpp
 }
 
