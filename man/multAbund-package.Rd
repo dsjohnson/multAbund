@@ -11,11 +11,6 @@ These functions model multivariate abundence with latent group
 designations for each species. The associations between species are 
 functions of common group membership.
 
-A vignette is available that illustrates use of the package with simulated abundance data.
-The vignette can be viewed with the command:
- 
-\verb{vignette("simulation_demo", package="multAbund")}
-
 \tabular{ll}{ 
 Package: \tab multAbund\cr 
 Type: \tab Package\cr 
