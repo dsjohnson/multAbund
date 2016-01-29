@@ -7,9 +7,6 @@ find_alpha=function(kappa, n){
 
 #' @title Compute intial values for the abundance / occurence RJMCMC using K-means clustering
 #' @param data_list A list created by the make_data_list function.
-#' @param log_alpha An intial guess at the log of the Dirichlet process parameter. Defaults to 0.
-#' @param phi_beta The prior variance parameter for the Normal prior for the fixed effect beta parameters
-#' @param mu_beta The prior mean for beta
 #' @param phi_omega The scale parameter for the half-t prior distribution for omega
 #' @param df_omega Degrees-of-freedom parmeter for omega half-t prior distribution. 
 #' @param num_groups An inital guess at the number of groups
@@ -27,9 +24,6 @@ find_alpha=function(kappa, n){
 
 make_inits = function(
   data_list,
-  log_alpha=0,
-  phi_beta=10, 
-  mu_beta, 
   phi_omega = 1, 
   df_omega = 1,
   num_groups
@@ -48,13 +42,18 @@ make_inits = function(
   X = data_list$X
   groups = 1:num_spec
   K_pi = kronecker(diag(num_spec), H)
-  # fit1 = glm(n ~ K_pi - 1, family="poisson")
-  #beta = solve(crossprod(X), crossprod(X, log(n+1)))
   fit = glm(resp ~ X + K_pi - 1, family=family)
   delta = fit$coef[-c(1:ncol(X))]
   beta = fit$coef[1:ncol(X)]
   delta[is.na(delta)] = 0
   delta_mat = matrix(delta, ncol=ncol(H), byrow=TRUE)
+  omega=optimize(
+    f=function(x, H, df_omega){
+      -sum(dmvnorm(delta_mat, rep(0,ncol(H)), x^2*solve(crossprod(H)),log=TRUE)) - 
+        dt(x/phi_omega, df_omega, log=TRUE) - log(phi_omega)
+    }, 
+    interval=c(0,1000), H=H, df_omega=df_omega
+  )$minimum
   if(missing(num_groups)){
     pdf(file = NULL)
     sink("/dev/null")
@@ -75,14 +74,14 @@ make_inits = function(
     delta = as.vector(t(groups_init$centers))
   }
   #delta_mat = sweep(delta_mat, 2, apply(delta_mat, 2, mean), "-")
-#   omega=optimize(
-#     f=function(x, H, df_omega){
-#       -sum(dmvnorm(delta_mat, rep(0,ncol(H)), x^2*solve(crossprod(H)),log=TRUE)) - 
-#         dt(x/phi_omega, df_omega, log=TRUE) - log(phi_omega)
-#     }, 
-#     interval=c(0,1000), H=H, df_omega=df_omega
-#   )$minimum
-  omega=2.85
+  omega=optimize(
+    f=function(x, H, df_omega){
+      -sum(dmvnorm(delta_mat, rep(0,ncol(H)), x^2*solve(crossprod(H)),log=TRUE)) - 
+        dt(x/phi_omega, df_omega, log=TRUE) - log(phi_omega)
+    }, 
+    interval=c(0,1000), H=H, df_omega=df_omega
+  )$minimum
+  # omega=2.85
   sigma = rep(1.0e-4, ncol(data_list$D))
   alpha = find_alpha(max(groups), num_spec)
   

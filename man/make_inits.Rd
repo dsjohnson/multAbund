@@ -4,17 +4,10 @@
 \alias{make_inits}
 \title{Compute intial values for the abundance / occurence RJMCMC using K-means clustering}
 \usage{
-make_inits(data_list, log_alpha = 0, phi_beta = 10, mu_beta,
-  phi_omega = 1, df_omega = 1, num_groups)
+make_inits(data_list, phi_omega = 1, df_omega = 1, num_groups)
 }
 \arguments{
 \item{data_list}{A list created by the make_data_list function.}
-
-\item{log_alpha}{An intial guess at the log of the Dirichlet process parameter. Defaults to 0.}
-
-\item{phi_beta}{The prior variance parameter for the Normal prior for the fixed effect beta parameters}
-
-\item{mu_beta}{The prior mean for beta}
 
 \item{phi_omega}{The scale parameter for the half-t prior distribution for omega}
 

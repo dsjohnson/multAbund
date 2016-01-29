@@ -1,10 +1,9 @@
 ---
 title: "Simulation demonstration of the `multAbund` package"
 author: "Devin S. Johnson"
-date: "2015-10-30"
+date: "2016-01-28"
 output: html_document
 ---
-
 
 Here I present a realistic demonstration of the `multAbund` package for multivariate species distribution modeling.
 
@@ -22,7 +21,9 @@ library(cowplot)
 ```
 ## 
 ## Attaching package: 'cowplot'
-## 
+```
+
+```
 ## The following object is masked from 'package:ggplot2':
 ## 
 ##     ggsave
@@ -33,8 +34,7 @@ library(ggdendro)
 library(magrittr)
 library(reshape2)
 library(mvtnorm)
-
-set.seed(555)
+library(viridis)
 ```
 
 ## 2. Simulation Design and Models
@@ -57,7 +57,7 @@ cnt_dat = with(cnt_dat, cnt_dat[order(species, obs), ])
 
 ```r
 ### Model
-delta_model = ~V1+V2+V3-1
+delta_model = ~V1+V2+V3
 X_model = ~V1+V2+V3+V4
 group = factor(rep(1:num_groups, group_comp))
 data_mats = make_data_list(delta_model = delta_model, X_model = X_model, data=cnt_dat, sigma_model=~1)
@@ -73,7 +73,8 @@ Here the parameters and counts are simulated.
 
 ```r
 ### Parmeters
-omega = 1
+set.seed(1234)
+omega = 1.25
 Omega = omega^2*solve(crossprod(data_mats$H))
 delta_pi = rmvnorm(num_groups, sigma=Omega)
 delta_pi = as.vector(t(sweep(delta_pi, 2,  apply(delta_pi, 2, mean), "-")))
@@ -88,7 +89,7 @@ cnt_dat$count = rpois(n=length(z), exp(z))
 
 ```r
 data_mats = make_data_list(counts="count", delta_model = delta_model, 
-                           X_model = X_model, data=cnt_dat[cnt_dat$obs<31,], 
+                           X_model = X_model, data=cnt_dat, 
                            sigma_model=~1)
 pred_mats = make_data_list(counts="count", delta_model = delta_model, 
                            X_model = X_model, data=cnt_dat, 
@@ -97,7 +98,7 @@ pred_mats = make_data_list(counts="count", delta_model = delta_model,
 
 ## 5. Prior paramters and initial values
 
-Here we define the prior distribution parameters and initial values. 
+Here we define the prior distribution parameters and initial values. To find the initial values, we will assume that all species belong to there own group, i.e., there are `num_species` groups. 
 
 
 ```r
@@ -108,28 +109,24 @@ alpha_prior = get_opt_alpha_prior(
   num_spec#, target0
 )
 
-alpha_ab = alpha_prior$ab
-phi_beta = 10
-mu_beta = c(fit0$coefficients, rep(0,ncol(X)-1))
-phi_omega = 1
-df_omega = 1
-phi_sigma = 1
-df_sigma = 51
+prior_parm = list(
+  a_alpha=alpha_prior[[1]][1],
+  b_alpha=alpha_prior[[1]][2],
+  Sigma_beta_inv = crossprod(data_mats$X)/100,
+  mu_beta = c(fit0$coefficients, rep(0,ncol(X)-1)),
+  phi_omega = 1,
+  df_omega = 1,
+  phi_sigma = 1,
+  df_sigma = 51
+)
 
-# inits=make_inits(
-#   data_list = data_mats,
-#   phi_beta=10, 
-#   mu_beta = c(fit0$coefficients, rep(0,ncol(X)-1)), 
-#   phi_omega = 1, 
-#   df_omega = 1
-# )
-
-inits=sugs(
-  data_list = data_mats,
-  phi_beta = phi_beta, 
-  mu_beta = mu_beta, 
-  phi_omega = phi_omega, 
-  df_omega = df_omega
+inits=list(
+  beta = with(data_mats, solve(crossprod(X),crossprod(X, log(n+0.5)))),
+  groups=c(1:20),
+  delta = rep(0, ncol(data_mats$H)*num_spec),
+  omega=1,
+  sigma = rep(1.0E-4, ncol(data_mats$D)),
+  log_alpha=0
 )
 ```
 
@@ -140,21 +137,14 @@ Here the model is fit via MCMC. Within the MCMC sampler, there is a mixture of G
 
 ```r
 block=200
-burn=20000
-iter=100000
+burn=10000
+iter=50000
 
 fit = mult_abund_pois(
   data_list=data_mats,
-  pred_list=pred_mats,
-  initial_vals = inits,
-  phi_beta = phi_beta, 
-  mu_beta = mu_beta, 
-  phi_omega = phi_omega, 
-  df_omega = df_omega,
-  a_alpha=alpha_ab[1],
-  b_alpha=alpha_ab[2],
-  phi_sigma = phi_sigma,
-  df_sigma = df_sigma,
+  pred_list = data_mats,
+  initial_list = inits,
+  prior_list = prior_parm,
   block = block, 
   begin_group_update=5*block,
   burn = burn, 
@@ -168,7 +158,7 @@ fit = mult_abund_pois(
 ```r
 # Posterior probability of shared group membership
 p1 = ggplot(aes(x=Var1, y=Var2), data=melt(apply(fit$prox, c(1,2), mean))) + geom_tile(aes(fill=value)) + labs(x=NULL, y=NULL) +
-  labs(x=NULL, y=NULL) + scale_fill_gradient("", limits=c(0, 1))
+  labs(x=NULL, y=NULL) + scale_fill_viridis("",limits=c(0, 1))
 
 # Fitted clustering of species
 kappa_dist = table(fit$kappa_pi)
@@ -177,13 +167,6 @@ d <- as.dist(1-apply(fit$prox, c(1,2), mean))
 hc = hclust(d, method="complete") 
 dendr    <- dendro_data(hc, type="rectangle") 
 clust    <- cutree(hc,k=kappa)                   
-```
-
-```
-## Error in cutree(hc, k = kappa): elements of 'k' must be between 1 and 20
-```
-
-```r
 clust.df <- data.frame(label=1:20, cluster=factor(clust))
 dendr[["labels"]] <- merge(dendr[["labels"]],clust.df, by="label")
 p2 = ggplot() + 
@@ -198,19 +181,14 @@ g1=plot_grid(p1, p2, labels = c("(A) Probability of shared membership", "(B) Est
 print(g1)
 ```
 
-![plot of chunk unnamed-chunk-8](figure/unnamed-chunk-8-1.png) 
+![plot of chunk unnamed-chunk-8](figure/unnamed-chunk-8-1.png)
 
 ```r
 # Fit and prediction
-ind = cnt_dat$obs<31
-pred_data = data.frame(count=cnt_dat$count[!ind], pred=apply(fit$pred, 2, median)[!ind])
-p3=ggplot(aes(x=count, y=pred), data=pred_data) + geom_point() + geom_abline(a=0,b=1) + 
-  xlab("Unobserved count") + ylab("Predicted count") 
-fit_data = data.frame(count=cnt_dat$count[ind], fit=apply(fit$pred, 2, median)[ind])
-p4=ggplot(aes(x=count, y=fit), data=fit_data) + geom_point() + geom_abline(a=0,b=1) + 
-  xlab("Observed count") + ylab("Fitted count") 
-g2=plot_grid(p3, p4, labels = c("(A) Predicted values for unobserved data", "(B) Fitted vlues for observed data"), hjust=0, ncol=1)
-print(g2)
+fit_data = data.frame(count=cnt_dat$count, fit=apply(fit$pred, 2, mean))
+p4=ggplot(aes(x=count, y=fit), data=fit_data) + geom_point() + geom_abline(intercept=0,slope=1) + 
+  xlab("Observed count") + ylab("Fitted count") + ggtitle("Fitted model predictions\n")
+print(p4)
 ```
 
-![plot of chunk unnamed-chunk-8](figure/unnamed-chunk-8-2.png) 
+![plot of chunk unnamed-chunk-8](figure/unnamed-chunk-8-2.png)

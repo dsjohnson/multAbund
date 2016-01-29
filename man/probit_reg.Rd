@@ -4,7 +4,7 @@
 \alias{probit_reg}
 \title{Probit regression via MCMC}
 \usage{
-probit_reg(data_list, pred_list, phi_beta, mu_beta, burn, iter)
+probit_reg(data_list, pred_list, burn, iter)
 }
 \arguments{
 \item{data_list}{A named list created of data items created from user data with the 
@@ -14,15 +14,13 @@ function \code{multAbund::make_data_list}. This data will be used for model fitt
 this list will be used for prediction purposes. For example, a user may want to withold
 data in a cross-validation check.}
 
-\item{phi_beta}{Scale parameter for the prior covariance of \verb{beta}. The covariance 
-is defined to be \verb{phi_beta^2*solve(X'X)}, where \code{X} is the design matrix 
-for the covariates associated with \verb{beta}}
-
-\item{mu_beta}{Prior mean of \verb{beta}.}
-
 \item{burn}{Number of burnin iterations that are discarded.}
 
 \item{iter}{Number of iterations retained for posterior inference.}
+
+\item{prior_list}{A list of prior parameters with the names and elements: 
+(1) \verb{Sigma_beta_inv}, the inverse covariance matrix of the normal prior for beta, and 
+(2) \verb{mu_beta}, the prior mean of beta.}
 }
 \description{
 Fit a probit regression model via MCMC using data augmentation.

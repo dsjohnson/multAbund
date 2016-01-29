@@ -4,8 +4,7 @@
 \alias{pois_reg}
 \title{Probit regression via MCMC}
 \usage{
-pois_reg(data_list, pred_list, phi_beta, mu_beta, phi_sigma, df_sigma, block,
-  burn, iter)
+pois_reg(data_list, pred_list, prior_list, initial_list, block, burn, iter)
 }
 \arguments{
 \item{data_list}{A named list created of data items created from user data with the 
@@ -15,15 +14,11 @@ function \code{multAbund::make_data_list}. This data will be used for model fitt
 this list will be used for prediction purposes. For example, a user may want to withold
 data in a cross-validation check.}
 
-\item{phi_beta}{Scale parameter for the prior covariance of \verb{beta}. The covariance 
-is defined to be \verb{phi_beta^2*solve(X'X)}, where \code{X} is the design matrix 
-for the covariates associated with \verb{beta}}
-
-\item{mu_beta}{Prior mean of \verb{beta}.}
-
-\item{phi_sigma}{Scale parameter for the half-t prior distribution for \verb{sigma}.}
-
-\item{df_sigma}{Degrees of freedom for \verb{sigma} prior. Follows the same rules as the omega prior specification.}
+\item{prior_list}{A list of prior parameters with the names and elements: 
+(1) \verb{Sigma_beta_inv}, the inverse covariance matrix of the normal prior for beta,
+(2) \verb{mu_beta}, the prior mean of beta, 
+(3) \verb{phi_sigma} scale parameter for the half-t prior distribution for sigma,
+(4) \verb{df_sigma} the degrees of freedom for sigma prior. Follows the same rules as the omega prior specification.}
 
 \item{block}{Number of iterations between Metropolis proposal adaptation.}
 

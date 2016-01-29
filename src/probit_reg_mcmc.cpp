@@ -28,9 +28,8 @@ arma::vec arma_rtruncnorm(const arma::vec& mean, const arma::vec& a, const arma:
 List probit_reg_mcmc(
     const Rcpp::List& data_list,
     const Rcpp::List& pred_list,
-    const arma::vec& beta_inits,
-    const double& phi_beta, 
-    const arma::vec& mu_beta,
+    const Rcpp::List& prior_list,
+    const Rcpp::List& initial_list,
     const int& burn, 
     const int& iter
 ) {
@@ -44,13 +43,16 @@ List probit_reg_mcmc(
   } else{
     X_pred = X;
   }
-  
+  arma::uvec obs_idx = find_finite(y);
+  X = X.rows(obs_idx);
+  y = y.elem(obs_idx);
   const int I = X.n_rows;
   const int p = X.n_cols;
 
   // #beta items
-  arma::vec beta = beta_inits;
-  arma::mat Sigma_beta_inv = inv(X.t()*X)/(phi_beta*phi_beta);
+  arma::vec beta = as<arma::vec>(initial_list["beta"]);;
+  arma::mat Sigma_beta_inv = as<arma::mat>(prior_list["Sigma_beta_inv"]);
+  arma::vec mu_beta = as<arma::vec>(prior_list["mu_beta"]);
   arma::mat  V_beta_inv(p,p);
   arma::vec v_beta(p);
   arma::mat beta_store(iter, p);

@@ -16,15 +16,18 @@ double ln_norm_2(const arma::vec& x, const double& sigma_sq);
 double ln_mvnorm(const arma::vec& x, const arma::mat& Sigma_inv);
 double ln_t(const arma::vec& x, const double& scale, const double& df);
 double ln_t_2(const double& x, const double& scale, const double& df);
-
 arma::mat rmult(const arma::vec& sigma, const arma::mat& X);
+double ln_zip(const int& x, const double& p, const double& lb);
+double ln_zip_vec(const arma::vec& x, const arma::vec& p, const arma::vec& lb);
+arma::vec logit_inv(const arma::vec& x);
+arma::vec logit(const arma::vec& p);
 
 // [[Rcpp::export]]
-List pois_reg_mcmc(
+List zip_reg_mcmc(
     const Rcpp::List& data_list,
     const Rcpp::List& pred_list,
     const Rcpp::List& prior_list,
-    const Rcpp::List& initial_list,
+    const Rcpp::List& inits_list,
     const int& block, 
     const int& burn, 
     const int& iter
@@ -34,20 +37,24 @@ List pois_reg_mcmc(
   arma::vec n = as<arma::vec>(data_list["n"]);
   arma::mat X = as<arma::mat>(data_list["X"]);
   arma::mat D = as<arma::mat>(data_list["D"]);
+  arma::mat M = as<arma::mat>(data_list["M"]);
   arma::mat X_pred;
   arma::mat D_pred;
+  arma::mat M_pred;
   if(!Rf_isNull(pred_list)){
     X_pred = as<arma::mat>(pred_list["X"]);
     D_pred = as<arma::mat>(pred_list["D"]);
+    M_pred = as<arma::mat>(pred_list["M"]);
   } else{
     X_pred = X;
     D_pred = D;
+    M_pred = M;
   }
   arma::uvec obs_idx = find_finite(n);
   X = X.rows(obs_idx);
   n = n.elem(obs_idx);
   D = D.rows(obs_idx);
-  
+  M = M.rows(obs_idx);
   const int I = X.n_rows;
   const int p = X.n_cols;
   
@@ -77,8 +84,24 @@ List pois_reg_mcmc(
   arma::mat  V_beta_inv(p,p);
   arma::vec v_beta(p);
   arma::vec beta(X.n_cols);
-  beta = as<arma::vec>(initial_list["beta"]);
+  beta = as<arma::vec>(inits_list("beta")); 
   arma::mat beta_store(iter, p);
+  
+  // gamma items 
+  arma::mat Sigma_lg_inv = as<arma::mat>(prior_list["Sigma_logit_gamma_inv"]);
+  arma::vec mu_lg = as<arma::vec>(prior_list["mu_logit_gamma"]);
+  arma::vec lg(M.n_cols, fill::zeros);
+  arma::vec lg_prop = lg;
+  double MHR_lg;
+  arma::mat lg_store(iter+burn, lg.n_elem);
+  arma::vec jump_lg(iter+burn, fill::zeros);
+  double r_lg;
+  double tune_lg = 2.4*2.4/lg.n_elem;
+  arma::mat pv_lg = 0.1*eye(lg.n_elem,lg.n_elem);
+  arma::mat L_lg = chol(pv_lg).t();
+  arma::vec gamma = logit_inv(M*lg);
+  arma::vec gamma_prop = gamma;
+  
   
   // Rcout << "beta prelim OK" << endl;
   
@@ -97,12 +120,12 @@ List pois_reg_mcmc(
   arma::mat tune_store(burn+iter, I);
   arma::vec z = log(n+0.5);
   arma::vec mu_z = X*beta; 
+  arma::vec lambda = exp(mu_z);
   
   // Rcout << "z prelim ok" << endl;
   
   // other quantities 
   arma::mat pred_store(iter, X_pred.n_rows);
-  arma::mat K_pi_pred;
   arma::vec mu_z_pred(X_pred.n_rows);
   arma::vec z_pred(X.n_rows);
   arma::vec sigma2_z_pred(D_pred.n_rows);
@@ -118,24 +141,17 @@ List pois_reg_mcmc(
     mu_z = X*beta;
     z_prop = z + sqrt(tune_z)%sqrt(pv_z)%armaNorm(I);
     for(int j=0; j<I; j++){
-      if(is_finite(n(j))){
-        z_prop(j) = z(j) + sqrt(tune_z(j))*sqrt(pv_z(j))*R::norm_rand();
-        MHR_z(j) = exp(
-          R::dpois(n(j), exp(z_prop(j)), 1) + R::dnorm(z_prop(j), mu_z(j), sqrt(sigma2_z(j)), 1)
-          - R::dpois(n(j), exp(z(j)), 1) - R::dnorm(z(j),mu_z(j),sqrt(sigma2_z(j)),1)
-        );
-      } else{
-        z_prop(j) = R::rnorm(mu_z(j),sqrt(sigma2_z(j)));
-        MHR_z(j) = 1.0;
-      }
+      z_prop(j) = z(j) + sqrt(tune_z(j))*sqrt(pv_z(j))*R::norm_rand();
+      MHR_z(j) = exp(
+        ln_zip(n(j), gamma(j), exp(z_prop(j))) + R::dnorm(z_prop(j), mu_z(j), sqrt(sigma2_z(j)), 1)
+        - ln_zip(n(j), gamma(j), exp(z(j))) - R::dnorm(z(j),mu_z(j),sqrt(sigma2_z(j)),1)
+      );
     }
     jump = find(armaU(I)<=MHR_z);
     z.elem(jump) = z_prop.elem(jump);
     i_uvec(0)=i;
     jump_z(i_uvec,jump) = ones<rowvec>(jump.n_elem);
     z_store.row(i) = z.t();
-    
-     // Rcout << "z updated" << endl;
     
     // adapt z MH tuning parameter
     if(i>0 & i%block==0){
@@ -145,16 +161,40 @@ List pois_reg_mcmc(
     }
     tune_store.row(i) = (sqrt(tune_z)%sqrt(pv_z)).t();
     
+    // Rcout << "z updated" << endl;
+    
     // update beta
     V_beta_inv = X.t()*rmult(1/sigma2_z,X) + Sigma_beta_inv;
     v_beta = X.t()*(z/sigma2_z) + Sigma_beta_inv*mu_beta;
     beta = GCN(V_beta_inv, v_beta);
+    mu_z = X*beta;
+    lambda = exp(mu_z);
     if(i>=burn) beta_store.row(i-burn) = beta.t();
     
-     // Rcout << "beta updated" << endl;
+    // Rcout << "beta updated" << endl;
+    
+    //update logit gamma
+    lg_prop = lg + sqrt(tune_lg)*L_lg*armaNorm(lg.n_elem);
+    gamma_prop = logit_inv(M*lg_prop);
+    MHR_sigma = exp(
+      ln_zip_vec(n, gamma_prop, lambda) + ln_mvnorm(lg_prop-mu_lg, Sigma_lg_inv)
+      - ln_zip_vec(n, gamma, lambda) - ln_mvnorm(lg-mu_lg, Sigma_lg_inv)
+    );
+    if(R::runif(0,1) <= MHR_sigma){
+      lg = lg_prop;
+      gamma = gamma_prop;
+      jump_lg(i) = 1;
+    }
+    lg_store.row(i) = lg.t();
+    
+    // adapt logit(gamma) MH tuning parameter
+    if(i>0 & i%block==0){
+      r_lg = mean(jump_lg.subvec(i-block, i));
+      tune_lg = exp(log(tune_lg) + pow(i/block,-0.5)*(r_lg-0.234));
+      pv_lg = pv_lg + sqrt(block/i)*(cov(lg_store.rows(i-block, i)) - pv_lg);
+    }
     
     // update sigma
-    mu_z = X*beta;
     log_sigma_prop = log_sigma + sqrt(tune_log_sigma)*L_log_sigma*armaNorm(log_sigma.n_elem);
     sigma2_z_prop = exp(2*D*log_sigma_prop) + 1.0E-8;
     MHR_sigma = exp(
@@ -175,7 +215,7 @@ List pois_reg_mcmc(
       pv_log_sigma = pv_log_sigma + sqrt(block/i)*(cov(log_sigma_store.rows(i-block, i)) - pv_log_sigma);
     }
     
-     // Rcout << "sigma updated" << endl;
+    // Rcout << "sigma updated" << endl;
     
     // make prediction
     if(i>=burn){

@@ -37,22 +37,14 @@
 #' code it will take some time. 
 #' @author Devin S. Johnson
 #' @export
-mult_abund_pois = function(data_list, pred_list, initial_vals, phi_beta, 
-                           mu_beta, phi_omega, df_omega, a_alpha, b_alpha, 
-                           phi_sigma, df_sigma, block, begin_group_update, 
+mult_abund_pois = function(data_list, pred_list=NULL, initial_list, prior_list,
+                           block, begin_group_update, 
                            burn, iter){
   out = mult_abund_mcmc(
     data_list=data_list, 
-    pred_list=pred_list, 
-    initial_vals=initial_vals, 
-    phi_beta=phi_beta, 
-    mu_beta=mu_beta, 
-    phi_omega=phi_omega, 
-    df_omega=df_omega, 
-    a_alpha=a_alpha, 
-    b_alpha=b_alpha, 
-    phi_sigma=phi_sigma, 
-    df_sigma=df_sigma, 
+    pred_list=pred_list,
+    prior_list=prior_list,
+    initial_list=initial_list, 
     block=block, 
     begin_group_update=begin_group_update, 
     burn=burn, 
@@ -94,20 +86,14 @@ mult_abund_pois = function(data_list, pred_list, initial_vals, phi_beta,
 #' @details Here are some details.
 #' @author Devin S. Johnson
 #' @export
-mult_abund_probit = function(data_list, pred_list, initial_vals, phi_beta, 
-                             mu_beta, phi_omega, df_omega, a_alpha, b_alpha, 
+mult_abund_probit = function(data_list, pred_list, prior_list, initial_list, 
                              block, begin_group_update, 
                              burn, iter){
   out = mult_occ_mcmc(
     data_list=data_list, 
     pred_list=pred_list, 
-    initial_vals=initial_vals, 
-    phi_beta=phi_beta, 
-    mu_beta=mu_beta, 
-    phi_omega=phi_omega, 
-    df_omega=df_omega, 
-    a_alpha=a_alpha, 
-    b_alpha=b_alpha, 
+    initial_list=initial_list, 
+    prior_list=prior_list,
     block=block, 
     begin_group_update=begin_group_update, 
     burn=burn, 
@@ -123,24 +109,21 @@ mult_abund_probit = function(data_list, pred_list, initial_vals, phi_beta,
 #' @param pred_list A named list created in the same way as \code{data_list}, however, 
 #' this list will be used for prediction purposes. For example, a user may want to withold
 #' data in a cross-validation check.
-#' @param phi_beta Scale parameter for the prior covariance of \verb{beta}. The covariance 
-#' is defined to be \verb{phi_beta^2*solve(X'X)}, where \code{X} is the design matrix 
-#' for the covariates associated with \verb{beta}
-#' @param mu_beta Prior mean of \verb{beta}.
+#' @param prior_list A list of prior parameters with the names and elements: 
+#' (1) \verb{Sigma_beta_inv}, the inverse covariance matrix of the normal prior for beta, and 
+#' (2) \verb{mu_beta}, the prior mean of beta.
 #' @param burn Number of burnin iterations that are discarded.
 #' @param iter Number of iterations retained for posterior inference.
 #' @author Devin S. Johnson
 #' @export
-probit_reg = function(data_list, pred_list, phi_beta, 
-                             mu_beta, burn, iter){
+probit_reg = function(data_list, pred_list, burn, iter){
   inits = glm(data_list$y ~ data_list$X-1, family=binomial("probit"))$coef
   inits = ifelse(is.na(inits), 0, inits)
   out = probit_reg_mcmc(
     data_list=data_list, 
     pred_list=pred_list, 
-    beta_inits=inits,
-    phi_beta=phi_beta, 
-    mu_beta=mu_beta, 
+    prior_list-prior_list,
+    initial_list=list(beta=inits),
     burn=burn, 
     iter=iter
   )
@@ -154,29 +137,24 @@ probit_reg = function(data_list, pred_list, phi_beta,
 #' @param pred_list A named list created in the same way as \code{data_list}, however, 
 #' this list will be used for prediction purposes. For example, a user may want to withold
 #' data in a cross-validation check.
-#' @param phi_beta Scale parameter for the prior covariance of \verb{beta}. The covariance 
-#' is defined to be \verb{phi_beta^2*solve(X'X)}, where \code{X} is the design matrix 
-#' for the covariates associated with \verb{beta}
-#' @param mu_beta Prior mean of \verb{beta}.
-#' @param phi_sigma Scale parameter for the half-t prior distribution for \verb{sigma}.
-#' @param df_sigma Degrees of freedom for \verb{sigma} prior. Follows the same rules as the omega prior specification.
+#' @param prior_list A list of prior parameters with the names and elements: 
+#' (1) \verb{Sigma_beta_inv}, the inverse covariance matrix of the normal prior for beta,
+#' (2) \verb{mu_beta}, the prior mean of beta, 
+#' (3) \verb{phi_sigma} scale parameter for the half-t prior distribution for sigma,
+#' (4) \verb{df_sigma} the degrees of freedom for sigma prior. Follows the same rules as the omega prior specification.
 #' @param block Number of iterations between Metropolis proposal adaptation.
 #' @param burn Number of burnin iterations that are discarded.
 #' @param iter Number of iterations retained for posterior inference.
 #' @author Devin S. Johnson
 #' @export
-pois_reg = function(data_list, pred_list, phi_beta, 
-                      mu_beta, phi_sigma, df_sigma, block, burn, iter){
+pois_reg = function(data_list, pred_list, prior_list, initial_list, block, burn, iter){
   inits = glm(data_list$n ~ data_list$X-1, family="poisson")$coef
   inits = ifelse(is.na(inits), 0, inits)
   out = pois_reg_mcmc(
     data_list=data_list, 
     pred_list=pred_list, 
-    beta_inits=inits,
-    phi_beta=phi_beta, 
-    mu_beta=mu_beta, 
-    phi_sigma=phi_sigma,
-    df_sigma=df_sigma,
+    prior_list=prior_list,
+    initial_list=list(beta=inits),
     block=block,
     burn=burn, 
     iter=iter

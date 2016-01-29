@@ -93,6 +93,45 @@ double ln_t_2(const double& x, const double& scale, const double& df){
   return out;
 }
 
+double ln_zip(const int& x, const double& p, const double& lb){
+  if(x==0){
+    return(log(p + (1-p)*R::dpois(x, lb, 0)));
+  } else{
+    return(log(1-p) + R::dpois(x, lb, 1));
+  }
+}
+
+double ln_zip_vec(const arma::vec& x, const arma::vec& p, const arma::vec& lb){
+  NumericVector out(x.n_elem);
+  for(int i=0; i<x.n_elem; i++){
+    if(x(i)==0){
+      out[i] = log(p(i) + (1-p(i))*R::dpois(x(i), lb(i), 0));
+    } else{
+      out[i] = log(1-p(i)) + R::dpois(x(i), lb(i), 1);
+    }
+  }
+  return(sum(out));
+}
+
+arma::vec logit_inv(const arma::vec& x){
+  arma::vec out(x.n_elem);
+  for(int i=0; i<out.n_elem; i++){
+    out(i) = R::plogis(x(i),0,1,1,0);
+  }
+  return(out);
+}
+
+arma::vec logit(const arma::vec& p){
+  arma::vec out(p.n_elem);
+  for(int i=0; i<out.n_elem; i++){
+    out(i) = R::qlogis(p(i),0,1,1,0);
+  }
+  return(out);
+}
+
+
+
+
 double ln_crp(const double& log_alpha, const arma::mat& C_pi){
   arma::vec groups = sum(C_pi).t();
   double alpha = exp(log_alpha);

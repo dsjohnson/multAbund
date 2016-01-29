@@ -28,13 +28,8 @@ arma::vec arma_rtruncnorm(const arma::vec& mean, const arma::vec& a, const arma:
 List mult_occ_mcmc(
     const Rcpp::List& data_list,
     const Rcpp::List& pred_list,
-    const Rcpp::List& initial_vals, 
-    const double& phi_beta, 
-    const arma::vec& mu_beta,
-    const double& phi_omega, 
-    const int& df_omega, 
-    const double& a_alpha,
-    const double& b_alpha,
+    const Rcpp::List& initial_list,
+    const Rcpp::List& prior_list,
     const int& block, 
     const int& begin_group_update,
     const int& burn, 
@@ -65,22 +60,28 @@ List mult_occ_mcmc(
   
   // Rcout << "a" << endl;
   
+  // #beta items
+  arma::mat Sigma_beta_inv = as<arma::mat>(prior_list["Sigma_beta_inv"]);
+  arma::vec mu_beta = as<arma::vec>(prior_list["mu_beta"]);
+  arma::mat  V_beta_inv(p,p);
+  arma::vec v_beta(p);
+  arma::vec beta = as<arma::vec>(initial_list["beta"]);
+  arma::mat beta_store(iter, p);
+  
   // pi items 
-  IntegerVector initial_groups = as<IntegerVector>(initial_vals["groups"]);
+  IntegerVector initial_groups = as<IntegerVector>(initial_list["groups"]);
   int kappa_pi = max(initial_groups);
   arma::mat C_pi(I, kappa_pi, fill::zeros); 
   for(int i=0; i<I; i++){C_pi(i,initial_groups(i)-1)=1;}
   arma::mat Prox = C_pi*C_pi.t();
   arma::cube prox_store(I,I,iter);
-  arma::cube L_store(I,I,iter);
+  // arma::cube L_store(I,I,iter);
   arma::mat L(I,I,fill::zeros);
   L(0,0) = 1;
   for(int i=1; i<I; i++){
     L(i,min(find(Prox.row(i)==1))) = 1;
   }
   arma::vec ln_link_probs;
-  arma::vec X_mu_beta = X*mu_beta;
-  arma::mat X_Sigma_beta_X = phi_beta*phi_beta*X*inv(X.t()*X)*X.t();
   arma::rowvec zeros_row(I, fill::zeros);
   arma::mat K_pi = kron(C_pi, H);
   arma::vec res(I*J);
@@ -90,9 +91,11 @@ List mult_occ_mcmc(
   // Rcout << "B" << endl;
   
   // #omega items
+  double phi_omega = as<double>(prior_list["phi_omega"]);
+  double df_omega = as<double>(prior_list["df_omega"]);
   arma::mat HtH = H.t()*H;
   arma::mat HtH_inv = inv_sympd(HtH);
-  double log_omega = log(as<double>(initial_vals["omega"]));
+  double log_omega = log(as<double>(initial_list["omega"]));
   double log_omega_prop = 0;
   arma::vec log_omega_store(iter+burn);
   double MHR_omega;
@@ -104,7 +107,9 @@ List mult_occ_mcmc(
   // Rcout << "D" << endl;
   
   // #alpha items
-  double log_alpha = as<double>(initial_vals["log_alpha"]);
+  double a_alpha = as<double>(prior_list["a_alpha"]);
+  double b_alpha = as<double>(prior_list["b_alpha"]);
+  double log_alpha = as<double>(initial_list["log_alpha"]);
   double log_alpha_prop = 0;
   arma::vec log_alpha_store(iter+burn);
   double MHR_alpha;
@@ -113,34 +118,24 @@ List mult_occ_mcmc(
   double tune_log_alpha = 2.4*2.4;
   double pv_log_alpha = 1;
   
-  // Rcout << "E" << endl;
-  
-  // #beta items
-  arma::mat Sigma_beta_inv = inv(X.t()*X)/(phi_beta*phi_beta);
-  arma::mat  V_beta_inv(p,p);
-  arma::vec v_beta(p);
-  arma::vec beta = as<arma::vec>(initial_vals["beta"]);
-  arma::mat beta_store(iter, p);
-  
-  // Rcout << "F" << endl;
-  
   // #delta_pi items
   arma::mat Sigma_delta_pi = kron(eye<mat>(kappa_pi,kappa_pi), exp(2*log_omega)*HtH_inv);
   arma::mat Sigma_delta_pi_inv = kron(eye<mat>(kappa_pi,kappa_pi), exp(-2*log_omega)*HtH);
   arma::mat Sigma_delta_pi_inv_prop;
   arma::mat V_delta_pi_inv(kappa_pi*q,kappa_pi*q);
+  arma::mat V_delta_pi(kappa_pi*q,kappa_pi*q);
   arma::vec v_delta_pi(kappa_pi*q);
-  arma::vec delta_pi = as<arma::vec>(initial_vals["delta"]);
+  arma::vec delta_pi = as<arma::vec>(initial_list["delta"]);
   arma::mat delta_bar_store(iter, I*q);
-  // arma::mat A = kron(ones<mat>(kappa_pi,1), eye<mat>(q,q)).t();
+  arma::mat A = kron(ones<mat>(kappa_pi,1), eye<mat>(q,q)).t();
   arma::mat to_bar = kron(C_pi, eye<mat>(q,q));
   
   // Rcout << "G" << endl;
   
   // #z items
-  arma::vec z_prop(I*J);
+  // arma::vec z_prop(I*J);
   arma::mat z_store(iter, I*J);
-  arma::vec r_z(I*J);
+  // arma::vec r_z(I*J);
   arma::vec z(y.n_elem);
   arma::vec mu_z = X*beta + K_pi*delta_pi;
   arma::vec a(y.n_elem);
@@ -214,13 +209,15 @@ List mult_occ_mcmc(
       C_pi = LtoC(L);
       kappa_pi = C_pi.n_cols;
       K_pi = kron(C_pi, H);
+      A = kron(ones<mat>(kappa_pi,1), eye<mat>(q,q)).t();
       to_bar = kron(C_pi, eye<mat>(q,q));
-      if(i>=burn){
-        prox_store.slice(i-burn)=C_pi*C_pi.t();
-        L_store.slice(i-burn) = L;
-        kappa_pi_store(i-burn) = kappa_pi;
-      }
     }
+    if(i>=burn){
+      prox_store.slice(i-burn)=C_pi*C_pi.t();
+      // L_store.slice(i-burn) = L;
+      kappa_pi_store(i-burn) = kappa_pi;
+    }
+
     // Rcout << "C_pi updated" << endl;
     
     // update delta_pi
@@ -228,6 +225,8 @@ List mult_occ_mcmc(
     V_delta_pi_inv = K_pi.t()*K_pi + Sigma_delta_pi_inv; 
     v_delta_pi = K_pi.t()*(z-X*beta);
     delta_pi = GCN(V_delta_pi_inv, v_delta_pi);
+    V_delta_pi = inv(V_delta_pi_inv);
+    delta_pi = delta_pi - V_delta_pi*A.t()*inv(A*V_delta_pi*A.t())*A*delta_pi;
     if(i>=burn) delta_bar_store.row(i-burn) = (to_bar*delta_pi).t(); 
     
     // Rcout << "delta updated" << endl;
@@ -236,13 +235,19 @@ List mult_occ_mcmc(
     log_omega_prop = log_omega + sqrt(tune_log_omega*pv_log_omega)*R::rnorm(0,1);
     Sigma_delta_pi_inv_prop = kron(eye<mat>(kappa_pi,kappa_pi), exp(-2*log_omega_prop)*HtH);
     Sigma_delta_pi_inv = kron(eye<mat>(kappa_pi,kappa_pi), exp(-2*log_omega)*HtH);
-    // if(kappa_pi>1){
-    MHR_omega = exp(
-      ln_mvnorm(delta_pi, Sigma_delta_pi_inv_prop) 
+    if(kappa_pi>1){
+      MHR_omega = exp(
+        ln_mvnorm(delta_pi, Sigma_delta_pi_inv_prop) 
       + ln_t_2(exp(log_omega_prop), phi_omega, df_omega) + log_omega_prop
       - ln_mvnorm(delta_pi, Sigma_delta_pi_inv) 
       - ln_t_2(exp(log_omega), phi_omega, df_omega) - log_omega
-    );
+      );
+    } else{
+      MHR_omega = exp(
+        ln_t_2(exp(log_omega_prop), phi_omega, df_omega) + log_omega_prop
+      - ln_t_2(exp(log_omega), phi_omega, df_omega) - log_omega
+      );
+    }
     if(R::runif(0,1) <= MHR_omega){
       log_omega = log_omega_prop;
       jump_omega(i) = 1;
@@ -295,7 +300,6 @@ List mult_occ_mcmc(
     Rcpp::Named("delta_bar") = delta_bar_store, 
     Rcpp::Named("prox") = prox_store,
     Rcpp::Named("kappa_pi") = kappa_pi_store,
-    Rcpp::Named("L") = L_store,
     Rcpp::Named("omega")=exp(log_omega_store(span(burn, burn+iter-1))),
     Rcpp::Named("alpha")=exp(log_alpha_store(span(burn, burn+iter-1))),
     Rcpp::Named("pred")=pred_store

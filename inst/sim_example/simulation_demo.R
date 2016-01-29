@@ -1,5 +1,11 @@
-## ----setup, include=FALSE------------------------------------------------
-knitr::opts_chunk$set(cache=TRUE)
+## ----global-options, include=FALSE---------------------------------------
+# set global chunk options
+library(knitr)
+options(digits=2)
+options(width=80)
+opts_chunk$set(dev="png",
+               dev.args=list(type="cairo",antialias="none"),
+               dpi=192)
 
 ## ------------------------------------------------------------------------
 library(multAbund)
@@ -9,8 +15,7 @@ library(ggdendro)
 library(magrittr)
 library(reshape2)
 library(mvtnorm)
-
-set.seed(555)
+library(viridis)
 
 ## ------------------------------------------------------------------------
 ### Design
@@ -25,7 +30,7 @@ cnt_dat = with(cnt_dat, cnt_dat[order(species, obs), ])
 
 ## ------------------------------------------------------------------------
 ### Model
-delta_model = ~V1+V2+V3-1
+delta_model = ~V1+V2+V3
 X_model = ~V1+V2+V3+V4
 group = factor(rep(1:num_groups, group_comp))
 data_mats = make_data_list(delta_model = delta_model, X_model = X_model, data=cnt_dat, sigma_model=~1)
@@ -35,7 +40,8 @@ X = data_mats$X
 
 ## ------------------------------------------------------------------------
 ### Parmeters
-omega = 1
+set.seed(1234)
+omega = 1.25
 Omega = omega^2*solve(crossprod(data_mats$H))
 delta_pi = rmvnorm(num_groups, sigma=Omega)
 delta_pi = as.vector(t(sweep(delta_pi, 2,  apply(delta_pi, 2, mean), "-")))
@@ -46,7 +52,7 @@ cnt_dat$count = rpois(n=length(z), exp(z))
 
 ## ------------------------------------------------------------------------
 data_mats = make_data_list(counts="count", delta_model = delta_model, 
-                           X_model = X_model, data=cnt_dat[cnt_dat$obs<31,], 
+                           X_model = X_model, data=cnt_dat, 
                            sigma_model=~1)
 pred_mats = make_data_list(counts="count", delta_model = delta_model, 
                            X_model = X_model, data=cnt_dat, 
@@ -60,47 +66,36 @@ alpha_prior = get_opt_alpha_prior(
   num_spec#, target0
 )
 
-alpha_ab = alpha_prior$ab
-phi_beta = 10
-mu_beta = c(fit0$coefficients, rep(0,ncol(X)-1))
-phi_omega = 1
-df_omega = 1
-phi_sigma = 1
-df_sigma = 51
+prior_parm = list(
+  a_alpha=alpha_prior[[1]][1],
+  b_alpha=alpha_prior[[1]][2],
+  Sigma_beta_inv = crossprod(data_mats$X)/100,
+  mu_beta = c(fit0$coefficients, rep(0,ncol(X)-1)),
+  phi_omega = 1,
+  df_omega = 1,
+  phi_sigma = 1,
+  df_sigma = 51
+)
 
-# inits=make_inits(
-#   data_list = data_mats,
-#   phi_beta=10, 
-#   mu_beta = c(fit0$coefficients, rep(0,ncol(X)-1)), 
-#   phi_omega = 1, 
-#   df_omega = 1
-# )
-
-inits=sugs(
-  data_list = data_mats,
-  phi_beta = phi_beta, 
-  mu_beta = mu_beta, 
-  phi_omega = phi_omega, 
-  df_omega = df_omega
+inits=list(
+  beta = with(data_mats, solve(crossprod(X),crossprod(X, log(n+0.5)))),
+  groups=c(1:20),
+  delta = rep(0, ncol(data_mats$H)*num_spec),
+  omega=1,
+  sigma = rep(1.0E-4, ncol(data_mats$D)),
+  log_alpha=0
 )
 
 ## ------------------------------------------------------------------------
 block=200
-burn=20000
-iter=100000
+burn=10000
+iter=50000
 
 fit = mult_abund_pois(
   data_list=data_mats,
-  pred_list=pred_mats,
-  initial_vals = inits,
-  phi_beta = phi_beta, 
-  mu_beta = mu_beta, 
-  phi_omega = phi_omega, 
-  df_omega = df_omega,
-  a_alpha=alpha_ab[1],
-  b_alpha=alpha_ab[2],
-  phi_sigma = phi_sigma,
-  df_sigma = df_sigma,
+  pred_list = data_mats,
+  initial_list = inits,
+  prior_list = prior_parm,
   block = block, 
   begin_group_update=5*block,
   burn = burn, 
@@ -110,7 +105,7 @@ fit = mult_abund_pois(
 ## ---- fig.width=8, fig.height=10-----------------------------------------
 # Posterior probability of shared group membership
 p1 = ggplot(aes(x=Var1, y=Var2), data=melt(apply(fit$prox, c(1,2), mean))) + geom_tile(aes(fill=value)) + labs(x=NULL, y=NULL) +
-  labs(x=NULL, y=NULL) + scale_fill_gradient("", limits=c(0, 1))
+  labs(x=NULL, y=NULL) + scale_fill_viridis("",limits=c(0, 1))
 
 # Fitted clustering of species
 kappa_dist = table(fit$kappa_pi)
@@ -133,13 +128,9 @@ g1=plot_grid(p1, p2, labels = c("(A) Probability of shared membership", "(B) Est
 print(g1)
 
 # Fit and prediction
-ind = cnt_dat$obs<31
-pred_data = data.frame(count=cnt_dat$count[!ind], pred=apply(fit$pred, 2, median)[!ind])
-p3=ggplot(aes(x=count, y=pred), data=pred_data) + geom_point() + geom_abline(a=0,b=1) + 
-  xlab("Unobserved count") + ylab("Predicted count") 
-fit_data = data.frame(count=cnt_dat$count[ind], fit=apply(fit$pred, 2, median)[ind])
-p4=ggplot(aes(x=count, y=fit), data=fit_data) + geom_point() + geom_abline(a=0,b=1) + 
-  xlab("Observed count") + ylab("Fitted count") 
-g2=plot_grid(p3, p4, labels = c("(A) Predicted values for unobserved data", "(B) Fitted vlues for observed data"), hjust=0, ncol=1)
-print(g2)
+fit_data = data.frame(count=cnt_dat$count, fit=apply(fit$pred, 2, mean))
+p4=ggplot(aes(x=count, y=fit), data=fit_data) + geom_point() + geom_abline(intercept=0,slope=1) + 
+  xlab("Observed count") + ylab("Fitted count") + ggtitle("Fitted model predictions\n")
+print(p4)
+
 

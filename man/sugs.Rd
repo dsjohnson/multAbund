@@ -4,8 +4,7 @@
 \alias{sugs}
 \title{Compute intial values for the abundance / occurence RJMCMC using an approximation of the SUGS algorithm}
 \usage{
-sugs(data_list, log_alpha = 0, phi_beta = 10, mu_beta, phi_omega = 1,
-  df_omega = 1)
+sugs(data_list, prior_list, log_alpha)
 }
 \arguments{
 \item{data_list}{A list created by the make_data_list function.}
