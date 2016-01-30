@@ -10,3 +10,5 @@
 ^inst/sim_example/simulation_demo\.md$
 ^inst/sim_example/\.RData$
 ^inst/sim_example/simulation_demo_files$
+^R/sugs\.R$
+^R/make_inits\.R$

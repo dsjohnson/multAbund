@@ -20,7 +20,6 @@ find_alpha=function(kappa, n){
 #' @author Devin S. Johnson
 #' @importFrom mvtnorm dmvnorm
 #' @importFrom NbClust NbClust
-#' @export
 
 make_inits = function(
   data_list,

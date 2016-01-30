@@ -22,7 +22,6 @@ find_alpha=function(kappa, n){
 #' @author Devin S. Johnson
 #' @references Wang, L. and Dunson, D.B. (2011) Fast Bayesian Inference in Dirichlet Process Mixture Models. Journal of Computational and Graphical Statistics, 20:196-216.
 #' @importFrom mvtnorm dmvnorm
-#' @export
 
 sugs = function(
   data_list,

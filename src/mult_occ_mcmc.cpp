@@ -58,7 +58,7 @@ List mult_occ_mcmc(
   const arma::mat I_J(J,J, fill::eye);
   const arma::mat I_I(I,I, fill::eye);
   
-  // Rcout << "a" << endl;
+  // Rcout << "Mats read" << endl;
   
   // #beta items
   arma::mat Sigma_beta_inv = as<arma::mat>(prior_list["Sigma_beta_inv"]);
@@ -67,6 +67,8 @@ List mult_occ_mcmc(
   arma::vec v_beta(p);
   arma::vec beta = as<arma::vec>(initial_list["beta"]);
   arma::mat beta_store(iter, p);
+  
+  // Rcout << "beta initialized" << endl;
   
   // pi items 
   IntegerVector initial_groups = as<IntegerVector>(initial_list["groups"]);
@@ -88,7 +90,8 @@ List mult_occ_mcmc(
   arma::vec delta_pi_hat;
   arma::vec kappa_pi_store(iter, fill::zeros);
   kappa_pi_store += kappa_pi;
-  // Rcout << "B" << endl;
+  
+  // Rcout << "pi initialized" << endl;
   
   // #omega items
   double phi_omega = as<double>(prior_list["phi_omega"]);
@@ -104,7 +107,7 @@ List mult_occ_mcmc(
   double tune_log_omega = 2.4*2.4;
   double pv_log_omega = 1;
   
-  // Rcout << "D" << endl;
+  // Rcout << "omega initialized" << endl;
   
   // #alpha items
   double a_alpha = as<double>(prior_list["a_alpha"]);
@@ -118,6 +121,8 @@ List mult_occ_mcmc(
   double tune_log_alpha = 2.4*2.4;
   double pv_log_alpha = 1;
   
+  // Rcout << "alpha initialized" << endl;
+  
   // #delta_pi items
   arma::mat Sigma_delta_pi = kron(eye<mat>(kappa_pi,kappa_pi), exp(2*log_omega)*HtH_inv);
   arma::mat Sigma_delta_pi_inv = kron(eye<mat>(kappa_pi,kappa_pi), exp(-2*log_omega)*HtH);
@@ -130,7 +135,7 @@ List mult_occ_mcmc(
   arma::mat A = kron(ones<mat>(kappa_pi,1), eye<mat>(q,q)).t();
   arma::mat to_bar = kron(C_pi, eye<mat>(q,q));
   
-  // Rcout << "G" << endl;
+  // Rcout << "delta initialized" << endl;
   
   // #z items
   // arma::vec z_prop(I*J);
@@ -153,13 +158,13 @@ List mult_occ_mcmc(
     }
   }
   
-  // Rcout << "H" << endl;
+  // Rcout << "z initialized" << endl;
   
   // other quantities 
   arma::mat pred_store(iter, X_pred.n_rows);
   arma::mat K_pi_pred;
   
-  // Rcout << "I" << endl;
+  // Rcout << "all initialized" << endl;
   
   //Begin MCMC
   Progress prog(iter+burn, true);
