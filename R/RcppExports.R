@@ -9,6 +9,10 @@ mult_occ_mcmc <- function(data_list, pred_list, initial_list, prior_list, block,
     .Call('multAbund_mult_occ_mcmc', PACKAGE = 'multAbund', data_list, pred_list, initial_list, prior_list, block, begin_group_update, burn, iter)
 }
 
+mult_zip_mcmc <- function(data_list, pred_list, initial_list, prior_list, block, begin_group_update, burn, iter) {
+    .Call('multAbund_mult_zip_mcmc', PACKAGE = 'multAbund', data_list, pred_list, initial_list, prior_list, block, begin_group_update, burn, iter)
+}
+
 pois_reg_mcmc <- function(data_list, pred_list, prior_list, initial_list, block, burn, iter) {
     .Call('multAbund_pois_reg_mcmc', PACKAGE = 'multAbund', data_list, pred_list, prior_list, initial_list, block, burn, iter)
 }
@@ -17,7 +21,7 @@ probit_reg_mcmc <- function(data_list, pred_list, prior_list, initial_list, burn
     .Call('multAbund_probit_reg_mcmc', PACKAGE = 'multAbund', data_list, pred_list, prior_list, initial_list, burn, iter)
 }
 
-zip_reg_mcmc <- function(data_list, pred_list, prior_list, inits_list, block, burn, iter) {
-    .Call('multAbund_zip_reg_mcmc', PACKAGE = 'multAbund', data_list, pred_list, prior_list, inits_list, block, burn, iter)
+zip_reg_mcmc <- function(data_list, pred_list, prior_list, initial_list, block, burn, iter) {
+    .Call('multAbund_zip_reg_mcmc', PACKAGE = 'multAbund', data_list, pred_list, prior_list, initial_list, block, burn, iter)
 }
 

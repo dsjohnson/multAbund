@@ -21,13 +21,15 @@ double ln_zip(const int& x, const double& p, const double& lb);
 double ln_zip_vec(const arma::vec& x, const arma::vec& p, const arma::vec& lb);
 arma::vec logit_inv(const arma::vec& x);
 arma::vec logit(const arma::vec& p);
+arma::vec arma_rbern(const arma::vec& p);
+double ln_logis(const arma::vec& x, const double& mu, const double& scale);
 
 // [[Rcpp::export]]
 List zip_reg_mcmc(
     const Rcpp::List& data_list,
     const Rcpp::List& pred_list,
     const Rcpp::List& prior_list,
-    const Rcpp::List& inits_list,
+    const Rcpp::List& initial_list,
     const int& block, 
     const int& burn, 
     const int& iter
@@ -41,15 +43,9 @@ List zip_reg_mcmc(
   arma::mat X_pred;
   arma::mat D_pred;
   arma::mat M_pred;
-  if(!Rf_isNull(pred_list)){
-    X_pred = as<arma::mat>(pred_list["X"]);
-    D_pred = as<arma::mat>(pred_list["D"]);
-    M_pred = as<arma::mat>(pred_list["M"]);
-  } else{
-    X_pred = X;
-    D_pred = D;
-    M_pred = M;
-  }
+  X_pred = as<arma::mat>(pred_list["X"]);
+  D_pred = as<arma::mat>(pred_list["D"]);
+  M_pred = as<arma::mat>(pred_list["M"]);
   arma::uvec obs_idx = find_finite(n);
   X = X.rows(obs_idx);
   n = n.elem(obs_idx);
@@ -84,13 +80,13 @@ List zip_reg_mcmc(
   arma::mat  V_beta_inv(p,p);
   arma::vec v_beta(p);
   arma::vec beta(X.n_cols);
-  beta = as<arma::vec>(inits_list("beta")); 
+  beta = as<arma::vec>(initial_list("beta")); 
   arma::mat beta_store(iter, p);
   
   // gamma items 
-  arma::mat Sigma_lg_inv = as<arma::mat>(prior_list["Sigma_logit_gamma_inv"]);
-  arma::vec mu_lg = as<arma::vec>(prior_list["mu_logit_gamma"]);
-  arma::vec lg(M.n_cols, fill::zeros);
+  double phi_lg = as<double>(prior_list["phi_logit_gamma"]);
+  double df_lg = as<double>(prior_list["df_logit_gamma"]);
+  arma::vec lg = as<arma::vec>(initial_list("logit_gamma"));
   arma::vec lg_prop = lg;
   double MHR_lg;
   arma::mat lg_store(iter+burn, lg.n_elem);
@@ -101,6 +97,8 @@ List zip_reg_mcmc(
   arma::mat L_lg = chol(pv_lg).t();
   arma::vec gamma = logit_inv(M*lg);
   arma::vec gamma_prop = gamma;
+  arma::vec gamma_pred = logit_inv(M_pred*lg);
+  
   
   
   // Rcout << "beta prelim OK" << endl;
@@ -120,7 +118,6 @@ List zip_reg_mcmc(
   arma::mat tune_store(burn+iter, I);
   arma::vec z = log(n+0.5);
   arma::vec mu_z = X*beta; 
-  arma::vec lambda = exp(mu_z);
   
   // Rcout << "z prelim ok" << endl;
   
@@ -129,6 +126,7 @@ List zip_reg_mcmc(
   arma::vec mu_z_pred(X_pred.n_rows);
   arma::vec z_pred(X.n_rows);
   arma::vec sigma2_z_pred(D_pred.n_rows);
+  arma::vec zrs(I, fill::zeros);
   
   // Rcout << "Storage ok" << endl;
   
@@ -168,7 +166,6 @@ List zip_reg_mcmc(
     v_beta = X.t()*(z/sigma2_z) + Sigma_beta_inv*mu_beta;
     beta = GCN(V_beta_inv, v_beta);
     mu_z = X*beta;
-    lambda = exp(mu_z);
     if(i>=burn) beta_store.row(i-burn) = beta.t();
     
     // Rcout << "beta updated" << endl;
@@ -177,8 +174,8 @@ List zip_reg_mcmc(
     lg_prop = lg + sqrt(tune_lg)*L_lg*armaNorm(lg.n_elem);
     gamma_prop = logit_inv(M*lg_prop);
     MHR_sigma = exp(
-      ln_zip_vec(n, gamma_prop, lambda) + ln_mvnorm(lg_prop-mu_lg, Sigma_lg_inv)
-      - ln_zip_vec(n, gamma, lambda) - ln_mvnorm(lg-mu_lg, Sigma_lg_inv)
+      ln_zip_vec(n, gamma_prop, exp(z)) + sum(ln_logis(lg_prop, 0,1)) //sum(ln_t(lg_prop, phi_lg, df_lg))
+      - ln_zip_vec(n, gamma, exp(z)) - sum(ln_logis(lg, 0,1)) //sum(ln_t(lg, phi_lg, df_lg))
     );
     if(R::runif(0,1) <= MHR_sigma){
       lg = lg_prop;
@@ -221,8 +218,9 @@ List zip_reg_mcmc(
     if(i>=burn){
       mu_z_pred = X_pred*beta;
       sigma2_z_pred = exp(D_pred*log_sigma);
+      gamma_pred = logit_inv(M_pred*lg);
       z_pred = mu_z_pred + sigma2_z_pred%armaNorm(X_pred.n_rows);
-      pred_store.row(i-burn) = exp(z_pred).t();
+      pred_store.row(i-burn) = (arma_rbern(1-gamma_pred)%exp(z_pred)).t();
     }
     
     // Rcout << "prediction made" << endl;
@@ -234,6 +232,7 @@ List zip_reg_mcmc(
   return Rcpp::List::create(
     Rcpp::Named("z") = z_store.rows(burn, burn+iter-1),
     Rcpp::Named("beta") = beta_store,
+    Rcpp::Named("logit_gamma") = lg_store,
     Rcpp::Named("sigma")=exp(log_sigma_store.rows(burn,iter+burn-1)),
     Rcpp::Named("pred")=pred_store
   );  

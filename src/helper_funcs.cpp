@@ -83,6 +83,15 @@ double ln_t(const arma::vec& x, const double& scale, const double& df){
   return sum(out);
 }
 
+double ln_logis(const arma::vec& x, const double& mu, const double& scale){
+  arma::vec out(x.n_elem);
+  for(int i=0; i<x.n_elem; i++){
+    out(i) = R::dlogis(x(i), mu, scale, 1);
+  }
+  return sum(out);
+}
+
+
 double ln_t_2(const double& x, const double& scale, const double& df){
   double out;
   if(df<50){
@@ -187,4 +196,12 @@ arma::vec arma_rtruncnorm(const arma::vec& mean, const arma::vec& a, const arma:
     out(i) = R::qnorm(R::runif(truncLo, truncUp), mean(i), 1, 1, 0);
   }
   return out;
+}
+
+arma::vec arma_rbern(const arma::vec& p){
+  arma::vec out(p.n_elem);
+  for(int i=0; i<p.n_elem; i++){
+    out(i) = R::rbinom(1,p(i));
+  }
+  return(out);
 }

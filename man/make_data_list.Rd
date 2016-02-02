@@ -5,7 +5,7 @@
 \title{Make necessary data matrices for multivariate abundance and occurence RJMCMC functions}
 \usage{
 make_data_list(counts = NULL, occur = NULL, delta_model, X_model,
-  sigma_model = ~1, data)
+  sigma_model = ~1, gamma_model = ~1, data)
 }
 \arguments{
 \item{counts}{A character string providing the name of the column in \verb{data} that contains the counts}
@@ -27,6 +27,7 @@ A list containing the following elements:
 \item{H}{The environmental variables from which the clustering is based}
 \item{X}{The design matrix for the global covariates}
 \item{D}{Design matrix defining sigma_ij}
+\item{M}{Design matrix defining the gamma_ij}
 \item{data}{Data frame containing the original data}
 }
 \author{
