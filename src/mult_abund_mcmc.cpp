@@ -22,9 +22,10 @@ double ln_t_2(const double& x, const double& scale, const double& df);
 double ln_crp(const double& log_alpha, const arma::mat& C_pi);
 arma::mat LtoC(const arma::mat& L);
 arma::mat rmult(const arma::vec& sigma, const arma::mat& X);
+arma::vec arma_rpois(const arma::vec& lam);
 
 // [[Rcpp::export]]
-List mult_abund_mcmc(
+List mult_pois_mcmc(
     const Rcpp::List& data_list,
     const Rcpp::List& pred_list,
     const Rcpp::List& initial_list, 
@@ -361,7 +362,7 @@ List mult_abund_mcmc(
       mu_z_pred = X_pred*beta + K_pi_pred*delta_pi;
       sigma2_z_pred = exp(D_pred*log_sigma);
       z_pred = mu_z_pred + sigma2_z_pred%armaNorm(X_pred.n_rows);
-      pred_store.row(i-burn) = exp(z_pred).t();
+      pred_store.row(i-burn) = arma_rpois(exp(z_pred)).t();
     }
     
     prog.increment();

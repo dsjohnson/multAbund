@@ -22,6 +22,7 @@ arma::mat LtoC(const arma::mat& L);
 arma::mat rmult(const arma::vec& sigma, const arma::mat& X);
 arma::vec arma_pnorm(const arma::vec& x);
 arma::vec arma_rtruncnorm(const arma::vec& mean, const arma::vec& a, const arma::vec& b);
+arma::vec arma_rbern(const arma::vec& p);
 
 
 // [[Rcpp::export]]
@@ -292,7 +293,7 @@ List mult_occ_mcmc(
     // make prediction
     if(i>=burn){
       K_pi_pred = kron(C_pi, H_pred);
-      pred_store.row(i-burn) = arma_pnorm(X_pred*beta + K_pi_pred*delta_pi).t();
+      pred_store.row(i-burn) = arma_rbern(arma_pnorm(X_pred*beta + K_pi_pred*delta_pi)).t();
     }
     
     prog.increment();

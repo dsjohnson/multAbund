@@ -205,3 +205,11 @@ arma::vec arma_rbern(const arma::vec& p){
   }
   return(out);
 }
+
+arma::vec arma_rpois(const arma::vec& lam){
+  arma::vec out(lam.n_elem);
+  for(int i=0; i<lam.n_elem; i++){
+    out(i) = R::rpois(lam(i));
+  }
+  return(out);
+}

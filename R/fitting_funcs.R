@@ -96,7 +96,7 @@ mult_abund_zip = function(data_list, pred_list=NULL, initial_list, prior_list,
 mult_abund_pois = function(data_list, pred_list=NULL, initial_list, prior_list,
                            block, begin_group_update, 
                            burn, iter){
-  out = mult_abund_mcmc(
+  out = mult_pois_mcmc(
     data_list=data_list, 
     pred_list=pred_list,
     prior_list=prior_list,

@@ -23,6 +23,7 @@ arma::vec logit_inv(const arma::vec& x);
 arma::vec logit(const arma::vec& p);
 arma::vec arma_rbern(const arma::vec& p);
 double ln_logis(const arma::vec& x, const double& mu, const double& scale);
+arma::vec arma_rpois(const arma::vec& lam);
 
 // [[Rcpp::export]]
 List zip_reg_mcmc(
@@ -127,6 +128,8 @@ List zip_reg_mcmc(
   arma::vec z_pred(X.n_rows);
   arma::vec sigma2_z_pred(D_pred.n_rows);
   arma::vec zrs(I, fill::zeros);
+  arma::vec n_pred(n.n_elem, fill::zeros);
+  
   
   // Rcout << "Storage ok" << endl;
   
@@ -216,11 +219,12 @@ List zip_reg_mcmc(
     
     // make prediction
     if(i>=burn){
-      mu_z_pred = X_pred*beta;
+      mu_z_pred = X_pred*beta; 
       sigma2_z_pred = exp(D_pred*log_sigma);
-      gamma_pred = logit_inv(M_pred*lg);
       z_pred = mu_z_pred + sigma2_z_pred%armaNorm(X_pred.n_rows);
-      pred_store.row(i-burn) = (arma_rbern(1-gamma_pred)%exp(z_pred)).t();
+      gamma_pred = logit_inv(M_pred*lg);
+      n_pred = arma_rpois(exp(z_pred));
+      pred_store.row(i-burn) = (arma_rbern(gamma_pred)%n_pred).t();
     }
     
     // Rcout << "prediction made" << endl;
