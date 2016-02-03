@@ -22,7 +22,7 @@ arma::mat LtoC(const arma::mat& L);
 arma::mat rmult(const arma::vec& sigma, const arma::mat& X);
 arma::vec arma_pnorm(const arma::vec& x);
 arma::vec arma_rtruncnorm(const arma::vec& mean, const arma::vec& a, const arma::vec& b);
-arma::vec arma_rbern(const arma::vec& p)
+arma::vec arma_rbern(const arma::vec& p);
 
 
 // [[Rcpp::export]]

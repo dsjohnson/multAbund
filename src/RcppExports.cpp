@@ -6,9 +6,9 @@
 
 using namespace Rcpp;
 
-// mult_abund_mcmc
-List mult_abund_mcmc(const Rcpp::List& data_list, const Rcpp::List& pred_list, const Rcpp::List& initial_list, const Rcpp::List& prior_list, const int& block, const int& begin_group_update, const int& burn, const int& iter);
-RcppExport SEXP multAbund_mult_abund_mcmc(SEXP data_listSEXP, SEXP pred_listSEXP, SEXP initial_listSEXP, SEXP prior_listSEXP, SEXP blockSEXP, SEXP begin_group_updateSEXP, SEXP burnSEXP, SEXP iterSEXP) {
+// mult_pois_mcmc
+List mult_pois_mcmc(const Rcpp::List& data_list, const Rcpp::List& pred_list, const Rcpp::List& initial_list, const Rcpp::List& prior_list, const int& block, const int& begin_group_update, const int& burn, const int& iter);
+RcppExport SEXP multAbund_mult_pois_mcmc(SEXP data_listSEXP, SEXP pred_listSEXP, SEXP initial_listSEXP, SEXP prior_listSEXP, SEXP blockSEXP, SEXP begin_group_updateSEXP, SEXP burnSEXP, SEXP iterSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
@@ -20,7 +20,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const int& >::type begin_group_update(begin_group_updateSEXP);
     Rcpp::traits::input_parameter< const int& >::type burn(burnSEXP);
     Rcpp::traits::input_parameter< const int& >::type iter(iterSEXP);
-    __result = Rcpp::wrap(mult_abund_mcmc(data_list, pred_list, initial_list, prior_list, block, begin_group_update, burn, iter));
+    __result = Rcpp::wrap(mult_pois_mcmc(data_list, pred_list, initial_list, prior_list, block, begin_group_update, burn, iter));
     return __result;
 END_RCPP
 }
