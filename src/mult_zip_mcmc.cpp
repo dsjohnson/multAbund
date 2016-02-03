@@ -412,6 +412,7 @@ List mult_zip_mcmc(
   return Rcpp::List::create(
     Rcpp::Named("z") = z_store.rows(burn, burn+iter-1),
     Rcpp::Named("beta") = beta_store,
+    Rcpp::Named("logit_gamma") = lg_store.rows(burn, burn+iter-1),
     Rcpp::Named("delta_bar") = delta_bar_store, 
     Rcpp::Named("prox") = prox_store,
     Rcpp::Named("kappa_pi") = kappa_pi_store,
