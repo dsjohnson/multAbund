@@ -353,7 +353,7 @@ List mult_zip_mcmc(
     log_alpha_prop = log_alpha + sqrt(tune_log_alpha*pv_log_alpha)*R::rnorm(0,1);
     MHR_alpha = exp(
       ln_crp(log_alpha_prop, C_pi) + R::dgamma(exp(log_alpha_prop), a_alpha, 1/b_alpha, 1) + log_alpha_prop
-      -ln_crp(log_alpha, C_pi) - R::dgamma(exp(log_alpha), a_alpha, 1/b_alpha, 1) + log_alpha
+      -ln_crp(log_alpha, C_pi) - R::dgamma(exp(log_alpha), a_alpha, 1/b_alpha, 1) - log_alpha
     );
     if(R::runif(0,1) <= MHR_alpha){
       log_alpha = log_alpha_prop;
