@@ -341,7 +341,7 @@ List mult_zip_mcmc(
     log_omega_store.row(i) = log_omega;
     
     // adapt log(omega) MH tuning parameter
-    if(i>0 & i%block==0){
+    if(i>0 & i%block==0 & i<= begin_group_update){
       r_omega = mean(jump_omega.subvec(i-block, i));
       tune_log_omega = exp(log(tune_log_omega) + pow(i/block,-0.5)*(r_omega-0.234));
       pv_log_omega = pv_log_omega + pow(i/block,-0.5)*(var(log_omega_store.subvec(i-block, i)) - pv_log_omega);
