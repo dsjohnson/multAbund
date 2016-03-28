@@ -116,6 +116,8 @@ List mult_pois_mcmc(
   double tune_log_omega = 2.4*2.4;
   double pv_log_omega = 1;
   
+  arma::vec log_omega_prop_store(iter+burn);
+  
   // Rcout << "D" << endl;
   
   // #alpha items
@@ -300,11 +302,11 @@ List mult_pois_mcmc(
       jump_omega(i) = 1;
     }
     log_omega_store.row(i) = log_omega;
-    
-    // Rcout << "omega updated" << endl;
+    log_omega_prop_store.row(i) = log_omega_prop;
+  // Rcout << "omega updated" << endl;
     
     // adapt log(omega) MH tuning parameter
-    if(i>0 & i%block==0){
+    if(i>0 & i%block==0 & i<= begin_group_update){
       r_omega = mean(jump_omega.subvec(i-block, i));
       tune_log_omega = exp(log(tune_log_omega) + pow(i/block,-0.5)*(r_omega-0.234));
       pv_log_omega = pv_log_omega + pow(i/block,-0.5)*(var(log_omega_store.subvec(i-block, i)) - pv_log_omega);
@@ -376,6 +378,7 @@ List mult_pois_mcmc(
     Rcpp::Named("prox") = prox_store,
     Rcpp::Named("kappa_pi") = kappa_pi_store,
     Rcpp::Named("omega")=exp(log_omega_store(span(burn, burn+iter-1))),
+    Rcpp::Named("ln_omega_prop")=log_omega_prop_store,
     Rcpp::Named("alpha")=exp(log_alpha_store(span(burn, burn+iter-1))),
     Rcpp::Named("sigma")=exp(log_sigma_store.rows(burn,iter+burn-1)),
     Rcpp::Named("pred")=pred_store
