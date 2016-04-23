@@ -211,8 +211,11 @@ List mult_zip_mcmc(
       if(is_finite(n(j))){
         z_prop(j) = z(j) + sqrt(tune_z(j))*sqrt(pv_z(j))*R::norm_rand();
         MHR_z(j) = exp(
-          R::dpois(n(j), exp(z_prop(j)), 1) + R::dnorm(z_prop(j), mu_z(j), sqrt(sigma2_z(j)), 1)
-          - R::dpois(n(j), exp(z(j)), 1) - R::dnorm(z(j),mu_z(j),sqrt(sigma2_z(j)),1)
+          // R::dpois(n(j), exp(z_prop(j)), 1) + R::dnorm(z_prop(j), mu_z(j), sqrt(sigma2_z(j)), 1)
+          // - R::dpois(n(j), exp(z(j)), 1) - R::dnorm(z(j),mu_z(j),sqrt(sigma2_z(j)),1)
+          ln_zip(n(j), gamma(j), exp(z_prop(j))) + R::dnorm(z_prop(j), mu_z(j), sqrt(sigma2_z(j)), 1)
+          - ln_zip(n(j), gamma(j), exp(z(j))) - R::dnorm(z(j),mu_z(j),sqrt(sigma2_z(j)),1)
+          
         );
       } else{
         z_prop(j) = R::rnorm(mu_z(j),sqrt(sigma2_z(j)));
