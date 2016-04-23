@@ -14,7 +14,7 @@ Description: This package provides RJMCMC samplers to make Bayesian inference
 License: CC0
 Imports: Rcpp (>= 0.12.2), copula, mvtnorm, NbClust
 Suggests: ggplot2, cowplot, magrittr, reshape2, knitr, rmarkdown, ggdendro
-LinkingTo: Rcpp, RcppArmadillo (>= 0.6.400.2.2), RcppProgress
+LinkingTo: Rcpp, RcppArmadillo, RcppProgress
 ByteCompile: TRUE
 NeedsCompilation: yes
 RoxygenNote: 5.0.1
