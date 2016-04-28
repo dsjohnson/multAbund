@@ -112,8 +112,8 @@ List mult_zip_mcmc(
   double MHR_omega;
   arma::vec jump_omega(iter+burn, fill::zeros);
   double r_omega;
-  double tune_log_omega = 2.4*2.4;
-  double pv_log_omega = 1;
+  double tune_log_omega = 1;
+  double pv_log_omega = 0.5;
   
   // Rcout << "omega initiated" << endl;
   
@@ -337,6 +337,8 @@ List mult_zip_mcmc(
       - ln_t_2(exp(log_omega), phi_omega, df_omega) - log_omega
       );
     }
+//     Rcout << exp(log_omega) << "  " << ln_mvnorm(delta_pi, Sigma_delta_pi_inv) << "  " 
+//     <<  exp(log_omega_prop) << "  " <<  ln_mvnorm(delta_pi, Sigma_delta_pi_inv_prop)  << endl;
     if(R::runif(0,1) <= MHR_omega){
       log_omega = log_omega_prop;
       jump_omega(i) = 1;
