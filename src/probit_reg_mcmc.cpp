@@ -28,7 +28,6 @@ arma::vec arma_rbern(const arma::vec& p);
 // [[Rcpp::export]]
 List probit_reg_mcmc(
     const Rcpp::List& data_list,
-    const Rcpp::List& pred_list,
     const Rcpp::List& prior_list,
     const Rcpp::List& initial_list,
     const int& burn, 
@@ -38,12 +37,12 @@ List probit_reg_mcmc(
   //matrices for fitting
   arma::vec y = as<arma::vec>(data_list["y"]);
   arma::mat X = as<arma::mat>(data_list["X"]);
-  arma::mat X_pred;
-  if(!Rf_isNull(pred_list)){
-    X_pred = as<arma::mat>(pred_list["X"]);
-  } else{
-    X_pred = X;
-  }
+//   arma::mat X_pred;
+//   if(!Rf_isNull(pred_list)){
+//     X_pred = as<arma::mat>(pred_list["X"]);
+//   } else{
+//     X_pred = X;
+//   }
   arma::uvec obs_idx = find_finite(y);
   X = X.rows(obs_idx);
   y = y.elem(obs_idx);
@@ -82,9 +81,7 @@ List probit_reg_mcmc(
   // Rcout << "H" << endl;
   
   // other quantities 
-  arma::mat pred_store(iter, X_pred.n_rows);
-  
-  // Rcout << "I" << endl;
+  // arma::mat pred_store(iter, X_pred.n_rows);
   
   //Begin MCMC
   Progress prog(iter+burn, true);
@@ -103,9 +100,9 @@ List probit_reg_mcmc(
     if(i>=burn) beta_store.row(i-burn) = beta.t();
     
     // make prediction
-    if(i>=burn){
-      pred_store.row(i-burn) = arma_rbern(arma_pnorm(X_pred*beta)).t();
-    }
+//     if(i>=burn){
+//       pred_store.row(i-burn) = arma_rbern(arma_pnorm(X_pred*beta)).t();
+//     }
     
     prog.increment();
     
@@ -113,7 +110,7 @@ List probit_reg_mcmc(
   
   return Rcpp::List::create(
     Rcpp::Named("z") = z_store,
-    Rcpp::Named("beta") = beta_store,
-    Rcpp::Named("pred")=pred_store
+    Rcpp::Named("beta") = beta_store//,
+    // Rcpp::Named("pred")=pred_store
   );  
 }

@@ -18,6 +18,8 @@ make_data_list(counts = NULL, occur = NULL, delta_model, X_model,
 
 \item{sigma_model}{A formula describing the sigma vector. Must be of the form \verb{~factorVariable-1}.}
 
+\item{gamma_model}{A formula describing the gamma vector for ZIP models}
+
 \item{data}{Data.frame containing counts and environmental variables}
 }
 \value{
@@ -29,6 +31,9 @@ A list containing the following elements:
 \item{D}{Design matrix defining sigma_ij}
 \item{M}{Design matrix defining the gamma_ij}
 \item{data}{Data frame containing the original data}
+}
+\description{
+Makes the necessary lists for imput into the RJMCMC fitting functions
 }
 \author{
 Devin S. Johnson

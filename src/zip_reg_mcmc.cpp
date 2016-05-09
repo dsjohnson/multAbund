@@ -28,7 +28,6 @@ arma::vec arma_rpois(const arma::vec& lam);
 // [[Rcpp::export]]
 List zip_reg_mcmc(
     const Rcpp::List& data_list,
-    const Rcpp::List& pred_list,
     const Rcpp::List& prior_list,
     const Rcpp::List& initial_list,
     const int& block, 
@@ -41,12 +40,12 @@ List zip_reg_mcmc(
   arma::mat X = as<arma::mat>(data_list["X"]);
   arma::mat D = as<arma::mat>(data_list["D"]);
   arma::mat M = as<arma::mat>(data_list["M"]);
-  arma::mat X_pred;
-  arma::mat D_pred;
-  arma::mat M_pred;
-  X_pred = as<arma::mat>(pred_list["X"]);
-  D_pred = as<arma::mat>(pred_list["D"]);
-  M_pred = as<arma::mat>(pred_list["M"]);
+//   arma::mat X_pred;
+//   arma::mat D_pred;
+//   arma::mat M_pred;
+//   X_pred = as<arma::mat>(pred_list["X"]);
+//   D_pred = as<arma::mat>(pred_list["D"]);
+//   M_pred = as<arma::mat>(pred_list["M"]);
   arma::uvec obs_idx = find_finite(n);
   X = X.rows(obs_idx);
   n = n.elem(obs_idx);
@@ -98,7 +97,7 @@ List zip_reg_mcmc(
   arma::mat L_lg = chol(pv_lg).t();
   arma::vec gamma = logit_inv(M*lg);
   arma::vec gamma_prop = gamma;
-  arma::vec gamma_pred = logit_inv(M_pred*lg);
+  // arma::vec gamma_pred = logit_inv(M_pred*lg);
   
   
   
@@ -123,12 +122,12 @@ List zip_reg_mcmc(
   // Rcout << "z prelim ok" << endl;
   
   // other quantities 
-  arma::mat pred_store(iter, X_pred.n_rows);
-  arma::vec mu_z_pred(X_pred.n_rows);
-  arma::vec z_pred(X.n_rows);
-  arma::vec sigma2_z_pred(D_pred.n_rows);
-  arma::vec zrs(I, fill::zeros);
-  arma::vec n_pred(n.n_elem, fill::zeros);
+  // arma::mat pred_store(iter, X_pred.n_rows);
+//   arma::vec mu_z_pred(X_pred.n_rows);
+//   arma::vec z_pred(X.n_rows);
+//   arma::vec sigma2_z_pred(D_pred.n_rows);
+//   arma::vec zrs(I, fill::zeros);
+//   arma::vec n_pred(n.n_elem, fill::zeros);
   
   
   // Rcout << "Storage ok" << endl;
@@ -218,14 +217,14 @@ List zip_reg_mcmc(
     // Rcout << "sigma updated" << endl;
     
     // make prediction
-    if(i>=burn){
-      mu_z_pred = X_pred*beta; 
-      sigma2_z_pred = exp(D_pred*log_sigma);
-      z_pred = mu_z_pred + sigma2_z_pred%armaNorm(X_pred.n_rows);
-      gamma_pred = logit_inv(M_pred*lg);
-      n_pred = arma_rpois(exp(z_pred));
-      pred_store.row(i-burn) = (arma_rbern(gamma_pred)%n_pred).t();
-    }
+//     if(i>=burn){
+//       mu_z_pred = X_pred*beta; 
+//       sigma2_z_pred = exp(D_pred*log_sigma);
+//       z_pred = mu_z_pred + sigma2_z_pred%armaNorm(X_pred.n_rows);
+//       gamma_pred = logit_inv(M_pred*lg);
+//       n_pred = arma_rpois(exp(z_pred));
+//       pred_store.row(i-burn) = (arma_rbern(gamma_pred)%n_pred).t();
+//     }
     
     // Rcout << "prediction made" << endl;
     
@@ -237,7 +236,7 @@ List zip_reg_mcmc(
     Rcpp::Named("z") = z_store.rows(burn, burn+iter-1),
     Rcpp::Named("beta") = beta_store,
     Rcpp::Named("logit_gamma") = lg_store,
-    Rcpp::Named("sigma")=exp(log_sigma_store.rows(burn,iter+burn-1)),
-    Rcpp::Named("pred")=pred_store
+    Rcpp::Named("sigma")=exp(log_sigma_store.rows(burn,iter+burn-1))//,
+    // Rcpp::Named("pred")=pred_store
   );  
 }

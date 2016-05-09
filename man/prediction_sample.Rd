@@ -4,10 +4,10 @@
 \alias{prediction_sample}
 \title{Predictions for Dirichlet Process Joint Species Distribution Model}
 \usage{
-prediction_sample(object, pred_list, z_pred = TRUE)
+prediction_sample(object, pred_list)
 }
 \arguments{
-\item{object}{A fitted MCMC model object obtained from call to one of the \quote{multAbund}
+\item{object}{A fitted MCMC model object obtained from call to one of the \code{multAbund}
 fitting functions.}
 
 \item{pred_list}{A list similar to data_list in the MCMC fitting functions 

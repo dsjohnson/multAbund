@@ -12,7 +12,7 @@ Description: This package provides RJMCMC samplers to make Bayesian inference
     functional guilds for modeling between species associations in abundance or
     occurance values at surveyed sites.
 License: CC0
-Imports: Rcpp (>= 0.12.2), copula, mvtnorm, NbClust
+Imports: Rcpp, copula
 Suggests: ggplot2, cowplot, magrittr, reshape2, knitr, rmarkdown, ggdendro
 LinkingTo: Rcpp, RcppArmadillo, RcppProgress
 ByteCompile: TRUE

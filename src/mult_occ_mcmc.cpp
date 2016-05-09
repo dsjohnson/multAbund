@@ -28,7 +28,6 @@ arma::vec arma_rbern(const arma::vec& p);
 // [[Rcpp::export]]
 List mult_occ_mcmc(
     const Rcpp::List& data_list,
-    const Rcpp::List& pred_list,
     const Rcpp::List& initial_list,
     const Rcpp::List& prior_list,
     const int& block, 
@@ -41,16 +40,16 @@ List mult_occ_mcmc(
   arma::vec y = as<arma::vec>(data_list["y"]);
   arma::mat H = as<arma::mat>(data_list["H"]);
   arma::mat X = as<arma::mat>(data_list["X"]);
-  arma::mat H_pred;
-  arma::mat X_pred;
-  arma::mat D_pred;
-  if(!Rf_isNull(pred_list)){
-    H_pred = as<arma::mat>(pred_list["H"]);
-    X_pred = as<arma::mat>(pred_list["X"]);
-  } else{
-    H_pred = H;
-    X_pred = X;
-  }
+//   arma::mat H_pred;
+//   arma::mat X_pred;
+//   arma::mat D_pred;
+//   if(!Rf_isNull(pred_list)){
+//     H_pred = as<arma::mat>(pred_list["H"]);
+//     X_pred = as<arma::mat>(pred_list["X"]);
+//   } else{
+//     H_pred = H;
+//     X_pred = X;
+//   }
   
   const int J = H.n_rows;
   const int I = X.n_rows/H.n_rows;
@@ -105,8 +104,8 @@ List mult_occ_mcmc(
   double MHR_omega;
   arma::vec jump_omega(iter+burn, fill::zeros);
   double r_omega;
-  double tune_log_omega = 2.4*2.4;
-  double pv_log_omega = 1;
+  double tune_log_omega = 1;
+  double pv_log_omega = 0.5;
   
   // Rcout << "omega initialized" << endl;
   
@@ -139,9 +138,7 @@ List mult_occ_mcmc(
   // Rcout << "delta initialized" << endl;
   
   // #z items
-  // arma::vec z_prop(I*J);
   arma::mat z_store(iter, I*J);
-  // arma::vec r_z(I*J);
   arma::vec z(y.n_elem);
   arma::vec mu_z = X*beta + K_pi*delta_pi;
   arma::vec a(y.n_elem);
@@ -162,8 +159,8 @@ List mult_occ_mcmc(
   // Rcout << "z initialized" << endl;
   
   // other quantities 
-  arma::mat pred_store(iter, X_pred.n_rows);
-  arma::mat K_pi_pred;
+//   arma::mat pred_store(iter, X_pred.n_rows);
+//   arma::mat K_pi_pred;
   
   // Rcout << "all initialized" << endl;
   
@@ -220,7 +217,6 @@ List mult_occ_mcmc(
     }
     if(i>=burn){
       prox_store.slice(i-burn)=C_pi*C_pi.t();
-      // L_store.slice(i-burn) = L;
       kappa_pi_store(i-burn) = kappa_pi;
     }
 
@@ -291,10 +287,10 @@ List mult_occ_mcmc(
     // Rcout << "alpha updated" << endl;
     
     // make prediction
-    if(i>=burn){
-      K_pi_pred = kron(C_pi, H_pred);
-      pred_store.row(i-burn) = arma_rbern(arma_pnorm(X_pred*beta + K_pi_pred*delta_pi)).t();
-    }
+//     if(i>=burn){
+//       K_pi_pred = kron(C_pi, H_pred);
+//       pred_store.row(i-burn) = arma_rbern(arma_pnorm(X_pred*beta + K_pi_pred*delta_pi)).t();
+//     }
     
     prog.increment();
     
@@ -307,7 +303,7 @@ List mult_occ_mcmc(
     Rcpp::Named("prox") = prox_store,
     Rcpp::Named("kappa_pi") = kappa_pi_store,
     Rcpp::Named("omega")=exp(log_omega_store(span(burn, burn+iter-1))),
-    Rcpp::Named("alpha")=exp(log_alpha_store(span(burn, burn+iter-1))),
-    Rcpp::Named("pred")=pred_store
+    Rcpp::Named("alpha")=exp(log_alpha_store(span(burn, burn+iter-1)))//,
+    // Rcpp::Named("pred")=pred_store
   );  
 }

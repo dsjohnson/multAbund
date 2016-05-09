@@ -22,7 +22,6 @@ arma::mat rmult(const arma::vec& sigma, const arma::mat& X);
 // [[Rcpp::export]]
 List pois_reg_mcmc(
     const Rcpp::List& data_list,
-    const Rcpp::List& pred_list,
     const Rcpp::List& prior_list,
     const Rcpp::List& initial_list,
     const int& block, 
@@ -34,15 +33,15 @@ List pois_reg_mcmc(
   arma::vec n = as<arma::vec>(data_list["n"]);
   arma::mat X = as<arma::mat>(data_list["X"]);
   arma::mat D = as<arma::mat>(data_list["D"]);
-  arma::mat X_pred;
-  arma::mat D_pred;
-  if(!Rf_isNull(pred_list)){
-    X_pred = as<arma::mat>(pred_list["X"]);
-    D_pred = as<arma::mat>(pred_list["D"]);
-  } else{
-    X_pred = X;
-    D_pred = D;
-  }
+//   arma::mat X_pred;
+//   arma::mat D_pred;
+//   if(!Rf_isNull(pred_list)){
+//     X_pred = as<arma::mat>(pred_list["X"]);
+//     D_pred = as<arma::mat>(pred_list["D"]);
+//   } else{
+//     X_pred = X;
+//     D_pred = D;
+//   }
   arma::uvec obs_idx = find_finite(n);
   X = X.rows(obs_idx);
   n = n.elem(obs_idx);
@@ -101,11 +100,11 @@ List pois_reg_mcmc(
   // Rcout << "z prelim ok" << endl;
   
   // other quantities 
-  arma::mat pred_store(iter, X_pred.n_rows);
-  arma::mat K_pi_pred;
-  arma::vec mu_z_pred(X_pred.n_rows);
-  arma::vec z_pred(X.n_rows);
-  arma::vec sigma2_z_pred(D_pred.n_rows);
+//   arma::mat pred_store(iter, X_pred.n_rows);
+//   arma::mat K_pi_pred;
+//   arma::vec mu_z_pred(X_pred.n_rows);
+//   arma::vec z_pred(X.n_rows);
+//   arma::vec sigma2_z_pred(D_pred.n_rows);
   
   // Rcout << "Storage ok" << endl;
   
@@ -178,12 +177,12 @@ List pois_reg_mcmc(
      // Rcout << "sigma updated" << endl;
     
     // make prediction
-    if(i>=burn){
-      mu_z_pred = X_pred*beta;
-      sigma2_z_pred = exp(D_pred*log_sigma);
-      z_pred = mu_z_pred + sigma2_z_pred%armaNorm(X_pred.n_rows);
-      pred_store.row(i-burn) = exp(z_pred).t();
-    }
+//     if(i>=burn){
+//       mu_z_pred = X_pred*beta;
+//       sigma2_z_pred = exp(D_pred*log_sigma);
+//       z_pred = mu_z_pred + sigma2_z_pred%armaNorm(X_pred.n_rows);
+//       pred_store.row(i-burn) = exp(z_pred).t();
+//     }
     
     // Rcout << "prediction made" << endl;
     
@@ -194,7 +193,7 @@ List pois_reg_mcmc(
   return Rcpp::List::create(
     Rcpp::Named("z") = z_store.rows(burn, burn+iter-1),
     Rcpp::Named("beta") = beta_store,
-    Rcpp::Named("sigma")=exp(log_sigma_store.rows(burn,iter+burn-1)),
-    Rcpp::Named("pred")=pred_store
+    Rcpp::Named("sigma")=exp(log_sigma_store.rows(burn,iter+burn-1))//,
+    // Rcpp::Named("pred")=pred_store
   );  
 }

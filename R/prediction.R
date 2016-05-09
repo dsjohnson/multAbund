@@ -1,7 +1,7 @@
 #' @title Predictions for Dirichlet Process Joint Species Distribution Model
 #' @description Create MCMC sample from various forms of the predictive distrubution 
 #' using the MCMC sample of the parameters
-#' @param object A fitted MCMC model object obtained from call to one of the \quote{multAbund}
+#' @param object A fitted MCMC model object obtained from call to one of the \code{multAbund}
 #' fitting functions.
 #' @param pred_list A list similar to data_list in the MCMC fitting functions 
 #' except values are used where prediction is desired
@@ -11,21 +11,26 @@
 #' for probit occurence models
 #' 
 #' @export
-prediction_sample = function(object, pred_list){
+prediction_sample = function(object, pred_list, WAIC=FALSE){
   if(is.null(pred_list$y)){
     num_spec=length(unique(pred_list$data$species))
-    Hdelta = apply(fit$delta_bar, 1, 
+    Hdelta = apply(object$delta_bar, 1, 
                    function(x,H,n){kronecker(diag(n),H)%*%x},
                    H = pred_list$H, n=num_spec)
-    Xbeta = apply(fit$beta, 1, 
+    Xbeta = apply(object$beta, 1, 
                   function(b,Q){return(Q%*%b)},
                   Q=pred_list$X)
-    Sig = apply(X=matrix(log(fit$sigma)), MARGIN=1, 
+    Sig = apply(X=matrix(log(object$sigma)), MARGIN=1, 
                 function(v,D){return(exp(D%*%v))},
                 D=pred_list$D)
     z_new = apply(Sig, 2, function(v){rnorm(length(v), sd=v)})
     lam = exp(Xbeta + Hdelta + z_new)
-    pred = matrix(rpois(length(lam), as.vector(lam)), nrow=nrow(lam))
+    if(WAIC){
+      lik = apply(lam, 2, function(l,n){dpois(n,l,log=T)})
+      out = -2*sum(rowMeans(lik)) + sum(apply(lik, 1, var))
+    } else {
+      out = matrix(rpois(length(lam), as.vector(lam)), nrow=nrow(lam))
+    }
     if(!is.null(object$logit_gamma)){
       gamma = apply(X=object$logit_gamma, MARGIN=1, 
                     function(v,M){return(plogis(M%*%v))},

@@ -1,10 +1,12 @@
 
 #' @title Make necessary data matrices for multivariate abundance and occurence RJMCMC functions
+#' @description Makes the necessary lists for imput into the RJMCMC fitting functions
 #' @param counts A character string providing the name of the column in \verb{data} that contains the counts
 #' @param occur A character string providing the name of the column in \verb{data} that contains the binary occurence data
 #' @param delta_model A formula decribing the variables for which delta will be the coefficients.
 #' @param X_model A formula giveng additional variables to be used for all groups. 
 #' @param sigma_model A formula describing the sigma vector. Must be of the form \verb{~factorVariable-1}.
+#' @param gamma_model A formula describing the gamma vector for ZIP models
 #' @param data Data.frame containing counts and environmental variables
 #' 
 #' @return 

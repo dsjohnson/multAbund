@@ -7,16 +7,16 @@ model with Bernoulli observations
 #' @description Fit a Dirichlet Process random effect model for joint species distribution inference of binary occurence data using 
 a RJMCMC procedure.}
 \usage{
-mult_abund_probit(data_list, pred_list, prior_list, initial_list, block,
+mult_abund_probit(data_list, prior_list, initial_list, block,
   begin_group_update, burn, iter)
 }
 \arguments{
 \item{data_list}{A named list created of data items created from user data with the 
 function \code{multAbund::make_data_list}. This data will be used for model fitting.}
 
-\item{pred_list}{A named list created in the same way as \code{data_list}, however, 
-this list will be used for prediction purposes. For example, a user may want to withold
-data in a cross-validation check.}
+\item{initial_list}{A named list of initial values for the parameters (see details). 
+The functions \code{multAbund::sugs} or \code{multAbund::make_inits} can be used to create this
+list.}
 
 \item{block}{Number of iterations between Metropolis proposal adaptation.}
 
@@ -27,10 +27,6 @@ before the groups begin updating.}
 \item{burn}{Number of burnin iterations that are discarded.}
 
 \item{iter}{Number of iterations retained for posterior inference.}
-
-\item{initial_vals}{A named list of initial values for the parameters (see details). 
-The functions \code{multAbund::sugs} or \code{multAbund::make_inits} can be used to create this
-list.}
 
 \item{phi_beta}{Scale parameter for the prior covariance of \verb{beta}. The covariance 
 is defined to be \verb{phi_beta^2*solve(X'X)}, where \code{X} is the design matrix 
@@ -48,6 +44,10 @@ than a half-t. If \verb{df_omega = 1}, then a half-Cauchy distribution is used.}
 \item{a_alpha}{Shape parameter for the gamma distribution of the \verb{alpha} parameter.}
 
 \item{b_alpha}{Rate parameter for the gamma distribution of the \verb{alpha} parameter.}
+}
+\description{
+Fit a Dirichlet Process random effect model for joint species distribution inference of binary occurence data using 
+a RJMCMC procedure.
 }
 \details{
 Here are some details.

@@ -27,7 +27,6 @@ arma::vec arma_rpois(const arma::vec& lam);
 // [[Rcpp::export]]
 List mult_pois_mcmc(
     const Rcpp::List& data_list,
-    const Rcpp::List& pred_list,
     const Rcpp::List& initial_list, 
     const Rcpp::List& prior_list, 
     const int& block, 
@@ -41,18 +40,18 @@ List mult_pois_mcmc(
   arma::mat H = as<arma::mat>(data_list["H"]);
   arma::mat X = as<arma::mat>(data_list["X"]);
   arma::mat D = as<arma::mat>(data_list["D"]);
-  arma::mat H_pred;
-  arma::mat X_pred;
-  arma::mat D_pred;
-  if(!Rf_isNull(pred_list)){
-    H_pred = as<arma::mat>(pred_list["H"]);
-    X_pred = as<arma::mat>(pred_list["X"]);
-    D_pred = as<arma::mat>(pred_list["D"]);
-  } else{
-    H_pred = H;
-    X_pred = X;
-    D_pred = D;
-  }
+//   arma::mat H_pred;
+//   arma::mat X_pred;
+//   arma::mat D_pred;
+//   if(!Rf_isNull(pred_list)){
+//     H_pred = as<arma::mat>(pred_list["H"]);
+//     X_pred = as<arma::mat>(pred_list["X"]);
+//     D_pred = as<arma::mat>(pred_list["D"]);
+//   } else{
+//     H_pred = H;
+//     X_pred = X;
+//     D_pred = D;
+//   }
   
   const int J = H.n_rows;
   const int I = X.n_rows/H.n_rows;
@@ -175,11 +174,11 @@ List mult_pois_mcmc(
   // Rcout << "H" << endl;
   
   // other quantities 
-  arma::mat pred_store(iter, X_pred.n_rows);
-  arma::mat K_pi_pred;
-  arma::vec mu_z_pred(X_pred.n_rows);
-  arma::vec z_pred(X.n_rows);
-  arma::vec sigma2_z_pred(D_pred.n_rows);
+//   arma::mat pred_store(iter, X_pred.n_rows);
+//   arma::mat K_pi_pred;
+//   arma::vec mu_z_pred(X_pred.n_rows);
+//   arma::vec z_pred(X.n_rows);
+//   arma::vec sigma2_z_pred(D_pred.n_rows);
   
   // Rcout << "I" << endl;
   
@@ -356,13 +355,13 @@ List mult_pois_mcmc(
     // Rcout << "sigma updated" << endl;
     
     // make prediction
-    if(i>=burn){
-      K_pi_pred = kron(C_pi, H_pred);
-      mu_z_pred = X_pred*beta + K_pi_pred*delta_pi;
-      sigma2_z_pred = exp(D_pred*log_sigma);
-      z_pred = mu_z_pred + sigma2_z_pred%armaNorm(X_pred.n_rows);
-      pred_store.row(i-burn) = arma_rpois(exp(z_pred)).t();
-    }
+//     if(i>=burn){
+//       K_pi_pred = kron(C_pi, H_pred);
+//       mu_z_pred = X_pred*beta + K_pi_pred*delta_pi;
+//       sigma2_z_pred = exp(D_pred*log_sigma);
+//       z_pred = mu_z_pred + sigma2_z_pred%armaNorm(X_pred.n_rows);
+//       pred_store.row(i-burn) = arma_rpois(exp(z_pred)).t();
+//     }
     
     prog.increment();
     
@@ -376,7 +375,7 @@ List mult_pois_mcmc(
     Rcpp::Named("kappa_pi") = kappa_pi_store,
     Rcpp::Named("omega")=exp(log_omega_store(span(burn, burn+iter-1))),
     Rcpp::Named("alpha")=exp(log_alpha_store(span(burn, burn+iter-1))),
-    Rcpp::Named("sigma")=exp(log_sigma_store.rows(burn,iter+burn-1)),
-    Rcpp::Named("pred")=pred_store
+    Rcpp::Named("sigma")=exp(log_sigma_store.rows(burn,iter+burn-1))//,
+    // Rcpp::Named("pred")=pred_store
   );  
 }
