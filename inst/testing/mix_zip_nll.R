@@ -12,11 +12,12 @@ mix_zip_nll = function(par, n, species, X, H, M, n_groups){
   if(is.null(X)) nX = 0 else nX = ncol(X)
   npar = c(nX, ncol(H)*n_groups, ncol(M), n_groups-1)
   par_list = split(par, rep(c('beta','delta','logit_gamma','logit_pi'), npar))
+  if(!all(par_list$logit_pi<=0)) return(Inf)
   delta = matrix(par_list$delta, ncol=n_groups)
   Xb = X%*%par_list$beta
   Hdelta = H %*% delta
   gamma = plogis(M%*%par_list$logit_gamma)
-  pi = exp(c(0, par_list$logit_pi))/sum(exp(c(0, par_list$logit_pi)))
+  pi = exp(cumsum(c(0, par_list$logit_pi)))/sum(exp(cumsum(c(0, par_list$logit_pi))))
   ll = matrix(NA,length(n), n_groups)
   for(k in 1:n_groups){
     ll[,k] = ln_zip(n, gamma, exp(Xb + Hdelta[,k]))
@@ -34,27 +35,38 @@ mle_mult_abund_pois = function(counts, species, beta_form=NULL,
   M = model.matrix(gamma_form, data)
   n = data[,counts]
   species = data[,species]
-  if(is.null(ln_prior_func)) ln_prior = function(par){return(0)}
+  if(is.null(ln_prior_func)) ln_prior_func = function(par){return(0)}
   if (is.null(init)) {
     beta = solve(crossprod(X),crossprod(X, log(n+0.5)))
     delta = solve(crossprod(H),crossprod(H, log(n+0.5)-X%*%beta))
     pi = c(n_groups:1)/sum(c(n_groups:1))
     pi = log(pi/pi[1])[-1]
-    par = c(
+    pi = c(pi[1], diff(pi))
+    par_init = c(
       beta,
       rep(delta, n_groups),
-      rep(0, ncol(M)),
-      pi
+      rep(0, ncol(M))
     )
+    obj_func_init = function(par_init, pi, n, species, X, H, M, n_groups){
+      par = c(par_init, pi)
+      return(mix_zip_nll(par, n, species, X, H, M, n_groups) - ln_prior_func(par))
+    }
     obj_func = function(par, n, species, X, H, M, n_groups){
       return(mix_zip_nll(par, n, species, X, H, M, n_groups) - ln_prior_func(par))
     }
+    
     fit_list = vector(mode = 'list', nrep)
     for(rr in 1:nrep){
-      init = optim(par, obj_func, n=n, species=species, X=X, H=H, M=M, n_groups=n_groups,
-                  method='SANN', control = list(maxit=2000))
+      init = optim(par_init, obj_func_init, pi=pi, n=n, species=species, X=X, H=H, M=M, n_groups=n_groups,
+                   method='SANN', control = list(maxit=2000))
+      init = optim(init$par, obj_func_init, pi=pi, n=n, species=species, X=X, H=H, M=M, n_groups=n_groups)
       message(rr, ')', ' initial -lnl = ', init$value)
-      fit_list[[rr]] = optim(init$par, obj_func, n=n, species=species, X=X, H=H, M=M, n_groups=n_groups,...)
+      fit_list[[rr]] = optimx(c(init$par, pi), obj_func, n=n, species=species, X=X, H=H, M=M, n_groups=n_groups,
+                             # method = 'L-BFGS-B', 
+                             # lower = -Inf, 
+                             # upper=c(rep(Inf, length(par_init)), rep(0,n_groups-1)),
+                             ...
+      )
       if(fit_list[[rr]]$convergence==0){
         message('     converged -lnl = ', fit_list[[rr]]$value)
       } else{
@@ -66,7 +78,7 @@ mle_mult_abund_pois = function(counts, species, beta_form=NULL,
   }
   else {
     par = init
-    out = optim(par, mix_zip_nll, n=n, species=species, X=X, H=H, M=M, n_groups=n_groups,...)
+    out = optimx(par, mix_zip_nll, n=n, species=species, X=X, H=H, M=M, n_groups=n_groups,...)
   }
   return(out)
 }
