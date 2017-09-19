@@ -93,7 +93,6 @@ iter=50000
 
 fit = mult_abund_pois(
   data_list=data_mats,
-  pred_list = data_mats,
   initial_list = inits,
   prior_list = prior_parm,
   block = block, 
