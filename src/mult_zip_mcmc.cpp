@@ -228,10 +228,10 @@ List mult_zip_mcmc(
     z_store.row(i) = z.t();
     
     // adapt z MH tuning parameter
-    if(i>0 & i%block==0){
+    if(i>block & i%block==0){
       r_z = mean(jump_z.submat(i-block, 0, i, I*J-1)).t();
-      tune_z = exp(log(tune_z) + pow(i/block,-0.5)*(r_z-0.234));
-      pv_z = pv_z + pow(i/block,-0.5)*(var(z_store.submat(i-block, 0, i, I*J-1)).t() - pv_z);
+      tune_z = exp(log(tune_z) + 2*pow(2, 0.25)*pow(i/block,-0.25)*(r_z-0.234));
+      pv_z = pv_z + pow(i/block,-0.25)*(var(z_store.submat(i-block, 0, i, I*J-1)).t() - pv_z);
     }
     tune_store.row(i) = (sqrt(tune_z)%sqrt(pv_z)).t();
     
@@ -260,10 +260,10 @@ List mult_zip_mcmc(
     lg_store.row(i) = lg.t();
     
     // adapt logit(gamma) MH tuning parameter
-    if(i>0 & i%block==0){
+    if(i>block & i%block==0){
       r_lg = mean(jump_lg.subvec(i-block, i));
-      tune_lg = exp(log(tune_lg) + pow(i/block,-0.5)*(r_lg-0.234));
-      pv_lg = pv_lg + sqrt(block/i)*(cov(lg_store.rows(i-block, i)) - pv_lg);
+      tune_lg = exp(log(tune_lg) + 2*pow(2, 0.25)*pow(i/block,-0.25)*(r_lg-0.234));
+      pv_lg = pv_lg + pow(i/block,-0.25)*(cov(lg_store.rows(i-block, i)) - pv_lg);
     }
     
     // Rcout << "gamma updated" << endl;
@@ -347,8 +347,8 @@ List mult_zip_mcmc(
     // adapt log(omega) MH tuning parameter
     if(i>0 & i%block==0 & i<= begin_group_update){
       r_omega = mean(jump_omega.subvec(i-block, i));
-      tune_log_omega = exp(log(tune_log_omega) + pow(i/block,-0.5)*(r_omega-0.234));
-      pv_log_omega = pv_log_omega + pow(i/block,-0.5)*(var(log_omega_store.subvec(i-block, i)) - pv_log_omega);
+      tune_log_omega = exp(log(tune_log_omega) + 2*pow(2, 0.25)*pow(i/block,-0.25)*(r_omega-0.234));
+      pv_log_omega = pv_log_omega + pow(i/block,-0.25)*(var(log_omega_store.subvec(i-block, i)) - pv_log_omega);
     }
     
     // Rcout << "omega updated" << endl;
@@ -368,8 +368,8 @@ List mult_zip_mcmc(
     // adapt log(alpha) MH tuning parameter
     if(i>0 & i%block==0){
       r_alpha = mean(jump_alpha.subvec(i-block, i));
-      tune_log_alpha = exp(log(tune_log_alpha) + pow(i/block,-0.5)*(r_alpha-0.234));
-      pv_log_alpha = pv_log_alpha + pow(i/block,-0.5)*(var(log_alpha_store.subvec(i-block, i)) - pv_log_alpha);
+      tune_log_alpha = exp(log(tune_log_alpha) + 2*pow(2, 0.25)*pow(i/block,-0.25)*(r_alpha-0.234));
+      pv_log_alpha = pv_log_alpha + pow(i/block,-0.25)*(var(log_alpha_store.subvec(i-block, i)) - pv_log_alpha);
     }
     
     // Rcout << "alpha updated" << endl;
@@ -388,12 +388,12 @@ List mult_zip_mcmc(
       jump_sigma(i) = 1;
     }
     log_sigma_store.row(i) = log_sigma.t();
-    
+
     // adapt log(sigma) MH tuning parameter
-    if(i>0 & i%block==0){
+    if(i>block & i%block==0){
       r_sigma = mean(jump_sigma.subvec(i-block, i));
-      tune_log_sigma = exp(log(tune_log_sigma) + pow(i/block,-0.5)*(r_sigma-0.234));
-      pv_log_sigma = pv_log_sigma + sqrt(block/i)*(cov(log_sigma_store.rows(i-block, i)) - pv_log_sigma);
+      tune_log_sigma = exp(log(tune_log_sigma) + 2*pow(2, 0.25)*pow(i/block,-0.25)*(r_sigma-0.234));
+      pv_log_sigma = pv_log_sigma + pow(i/block,-0.25)*(cov(log_sigma_store.rows(i-block, i)) - pv_log_sigma);
       L_log_sigma = chol(pv_log_sigma).t();
     }
     
