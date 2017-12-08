@@ -47,10 +47,10 @@ List mult_zip_mcmc(
   arma::mat X = as<arma::mat>(data_list["X"]);
   arma::mat D = as<arma::mat>(data_list["D"]);
   arma::mat M = as<arma::mat>(data_list["M"]);
-//   arma::mat H_pred = as<arma::mat>(pred_list["H"]);
-//   arma::mat X_pred = as<arma::mat>(pred_list["X"]);
-//   arma::mat D_pred = as<arma::mat>(pred_list["D"]);
-//   arma::mat M_pred = as<arma::mat>(pred_list["M"]);
+  //   arma::mat H_pred = as<arma::mat>(pred_list["H"]);
+  //   arma::mat X_pred = as<arma::mat>(pred_list["X"]);
+  //   arma::mat D_pred = as<arma::mat>(pred_list["D"]);
+  //   arma::mat M_pred = as<arma::mat>(pred_list["M"]);
   
   const int J = H.n_rows;
   const int I = X.n_rows/H.n_rows;
@@ -105,8 +105,9 @@ List mult_zip_mcmc(
   double df_omega = as<double>(prior_list["df_omega"]);
   arma::mat HtH = H.t()*H;
   arma::mat HtH_inv = inv_sympd(HtH);
+  double ln_det_HtH = log(det(HtH));
   double log_omega = log(as<double>(initial_list["omega"]));
-  double log_omega_prop = 0;
+  double log_omega_prop;
   arma::vec log_omega_store(iter+burn);
   double MHR_omega;
   arma::vec jump_omega(iter+burn, fill::zeros);
@@ -189,12 +190,12 @@ List mult_zip_mcmc(
   // Rcout << "z initiated" << endl;
   
   // other quantities 
-//   arma::mat pred_store(iter, X_pred.n_rows);
-//   arma::mat K_pi_pred;
-//   arma::vec mu_z_pred(X_pred.n_rows);
-//   arma::vec z_pred(X.n_rows);
-//   arma::vec sigma2_z_pred(D_pred.n_rows);
-//   arma::vec n_pred(n.n_elem, fill::zeros);
+  //   arma::mat pred_store(iter, X_pred.n_rows);
+  //   arma::mat K_pi_pred;
+  //   arma::vec mu_z_pred(X_pred.n_rows);
+  //   arma::vec z_pred(X.n_rows);
+  //   arma::vec sigma2_z_pred(D_pred.n_rows);
+  //   arma::vec n_pred(n.n_elem, fill::zeros);
   
   // Rcout << "pred initiated" << endl;
   
@@ -286,6 +287,7 @@ List mult_zip_mcmc(
           ln_link_probs(link) = (kappa_pi*q/2)*log(2*PI) 
             - 0.5*log(det(V_delta_pi_inv))
             + ln_norm(res-K_pi*delta_pi_hat, sigma2_z) 
+            // - (kappa_pi*q*log_omega) + kappa_pi*ln_det_HtH - 0.5*as_scalar(delta_pi_hat.t()*Sigma_delta_pi_inv*delta_pi_hat);
             + ln_mvnorm(delta_pi_hat, Sigma_delta_pi_inv);
         }
         ln_link_probs -= max(ln_link_probs);
@@ -325,9 +327,11 @@ List mult_zip_mcmc(
     Sigma_delta_pi_inv = kron(eye<mat>(kappa_pi,kappa_pi), exp(-2*log_omega)*HtH);
     if(kappa_pi>1){
       MHR_omega = exp(
-        ln_mvnorm(delta_pi, Sigma_delta_pi_inv_prop) 
+      // - (kappa_pi*q*log_omega_prop) - 0.5*as_scalar(delta_pi.t()*Sigma_delta_pi_inv_prop*delta_pi)
+        ln_mvnorm(delta_pi, Sigma_delta_pi_inv_prop)
       + ln_t_2(exp(log_omega_prop), phi_omega, df_omega) + log_omega_prop
-      - ln_mvnorm(delta_pi, Sigma_delta_pi_inv) 
+      // + (kappa_pi*q*log_omega) + 0.5*as_scalar(delta_pi.t()*Sigma_delta_pi_inv*delta_pi)
+      - ln_mvnorm(delta_pi, Sigma_delta_pi_inv)
       - ln_t_2(exp(log_omega), phi_omega, df_omega) - log_omega
       );
     } else{
@@ -336,13 +340,13 @@ List mult_zip_mcmc(
       - ln_t_2(exp(log_omega), phi_omega, df_omega) - log_omega
       );
     }
-//     Rcout << exp(log_omega) << "  " << ln_mvnorm(delta_pi, Sigma_delta_pi_inv) << "  " 
-//     <<  exp(log_omega_prop) << "  " <<  ln_mvnorm(delta_pi, Sigma_delta_pi_inv_prop)  << endl;
+    
     if(R::runif(0,1) <= MHR_omega){
       log_omega = log_omega_prop;
       jump_omega(i) = 1;
     }
     log_omega_store.row(i) = log_omega;
+    
     
     // adapt log(omega) MH tuning parameter
     if(i>0 & i%block==0 & i<= begin_group_update){
@@ -388,7 +392,7 @@ List mult_zip_mcmc(
       jump_sigma(i) = 1;
     }
     log_sigma_store.row(i) = log_sigma.t();
-
+    
     // adapt log(sigma) MH tuning parameter
     if(i>block & i%block==0){
       r_sigma = mean(jump_sigma.subvec(i-block, i));
@@ -400,15 +404,15 @@ List mult_zip_mcmc(
     // Rcout << "sigma updated" << endl;
     
     // make prediction
-//     if(i>=burn){
-//       K_pi_pred = kron(C_pi, H_pred);
-//       mu_z_pred = X_pred*beta + K_pi_pred*delta_pi;
-//       sigma2_z_pred = exp(D_pred*log_sigma);
-//       z_pred = mu_z_pred + sigma2_z_pred%armaNorm(X_pred.n_rows);
-//       gamma_pred = logit_inv(M_pred*lg);
-//       n_pred = arma_rpois(exp(z_pred));
-//       pred_store.row(i-burn) = (arma_rbern(gamma_pred)%n_pred).t();
-//     }
+    //     if(i>=burn){
+    //       K_pi_pred = kron(C_pi, H_pred);
+    //       mu_z_pred = X_pred*beta + K_pi_pred*delta_pi;
+    //       sigma2_z_pred = exp(D_pred*log_sigma);
+    //       z_pred = mu_z_pred + sigma2_z_pred%armaNorm(X_pred.n_rows);
+    //       gamma_pred = logit_inv(M_pred*lg);
+    //       n_pred = arma_rpois(exp(z_pred));
+    //       pred_store.row(i-burn) = (arma_rbern(gamma_pred)%n_pred).t();
+    //     }
     
     // Rcout << "prediction updated" << endl;
     
