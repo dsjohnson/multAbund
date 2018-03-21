@@ -24,7 +24,6 @@
 #' @param begin_group_update The iteration at with the group clusters begin updating.
 #' The RJMCMC often performs better when the chain is allowed to sample only the parameters 
 #' before the groups begin updating. 
-#' @param max_adapt maximum number of iterations that proposals are adapted
 #' @param update_omega Logical. Should omega be updated or not?
 #' @param burn Number of burnin iterations that are discarded.
 #' @param iter Number of iterations retained for posterior inference.
@@ -37,7 +36,7 @@
 #' @author Devin S. Johnson
 #' @export
 mult_abund_zip = function(data_list, initial_list, prior_list,
-                           block, begin_group_update, max_adapt, update_omega=T,
+                           block, begin_group_update, update_omega=T,
                            burn, iter){
   out = mult_zip_mcmc(
     data_list=data_list, 
@@ -45,7 +44,6 @@ mult_abund_zip = function(data_list, initial_list, prior_list,
     initial_list=initial_list, 
     block=block, 
     begin_group_update=begin_group_update, 
-    max_adapt=max_adapt,
     update_omega=update_omega,
     burn=burn, 
     iter=iter
@@ -79,7 +77,6 @@ mult_abund_zip = function(data_list, initial_list, prior_list,
 #' @param begin_group_update The iteration at with the group clusters begin updating.
 #' The RJMCMC often performs better when the chain is allowed to sample only the parameters 
 #' before the groups begin updating. 
-#' @param max_adapt maximum number of iterations that proposals are adapted
 #' @param update_omega Logical. Should omega be updated or not?
 #' @param burn Number of burnin iterations that are discarded.
 #' @param iter Number of iterations retained for posterior inference.
