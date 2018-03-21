@@ -92,7 +92,7 @@ mult_abund_zip = function(data_list, initial_list, prior_list,
 #' @author Devin S. Johnson
 #' @export
 mult_abund_norm = function(data_list, initial_list, prior_list,
-                          block, begin_group_update, max_adapt, update_omega=T,
+                          block, begin_group_update, update_omega=T,
                           burn, iter){
   out = mult_norm_mcmc(
     data_list=data_list, 
@@ -100,7 +100,6 @@ mult_abund_norm = function(data_list, initial_list, prior_list,
     initial_list=initial_list, 
     block=block, 
     begin_group_update=begin_group_update, 
-    max_adapt=max_adapt,
     update_omega=update_omega,
     burn=burn, 
     iter=iter

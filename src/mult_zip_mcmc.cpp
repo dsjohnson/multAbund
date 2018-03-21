@@ -38,7 +38,6 @@ List mult_zip_mcmc(
     const Rcpp::List& prior_list, 
     const int& block, 
     const int& begin_group_update,
-    const int& max_adapt,
     const bool& update_omega,
     const int& burn, 
     const int& iter
@@ -232,7 +231,7 @@ List mult_zip_mcmc(
     z_store.row(i) = z.t();
     
     // adapt z MH tuning parameter
-    if(i>block & i%block==0 & i<max_adapt){
+    if(i>block & i%block==0){
       r_z = mean(jump_z.submat(i-block, 0, i, I*J-1)).t();
       tune_z = exp(log(tune_z) + 2*pow(2, 0.25)*pow(i/block,-0.25)*(r_z-0.234));
       pv_z = pv_z + pow(i/block,-0.25)*(var(z_store.submat(i-block, 0, i, I*J-1)).t() - pv_z);
@@ -264,7 +263,7 @@ List mult_zip_mcmc(
     lg_store.row(i) = lg.t();
     
     // adapt logit(gamma) MH tuning parameter
-    if(i>block & i%block==0 & i<max_adapt){
+    if(i>block & i%block==0){
       r_lg = mean(jump_lg.subvec(i-block, i));
       tune_lg = exp(log(tune_lg) + 2*pow(2, 0.25)*pow(i/block,-0.25)*(r_lg-0.234));
       pv_lg = pv_lg + pow(i/block,-0.25)*(cov(lg_store.rows(i-block, i)) - pv_lg);
@@ -376,7 +375,7 @@ List mult_zip_mcmc(
     log_alpha_store(i) = log_alpha;
     
     // adapt log(alpha) MH tuning parameter
-    if(i>0 & i%block==0 & i<max_adapt){
+    if(i>0 & i%block==0){
       r_alpha = mean(jump_alpha.subvec(i-block, i));
       tune_log_alpha = exp(log(tune_log_alpha) + 2*pow(2, 0.25)*pow(i/block,-0.25)*(r_alpha-0.234));
       pv_log_alpha = pv_log_alpha + pow(i/block,-0.25)*(var(log_alpha_store.subvec(i-block, i)) - pv_log_alpha);
@@ -400,7 +399,7 @@ List mult_zip_mcmc(
     log_sigma_store.row(i) = log_sigma.t();
     
     // adapt log(sigma) MH tuning parameter
-    if(i>block & i%block==0 & i < max_adapt){
+    if(i>block & i%block==0){
       r_sigma = mean(jump_sigma.subvec(i-block, i));
       tune_log_sigma = exp(log(tune_log_sigma) + 2*pow(2, 0.25)*pow(i/block,-0.25)*(r_sigma-0.234));
       pv_log_sigma = pv_log_sigma + pow(i/block,-0.25)*(cov(log_sigma_store.rows(i-block, i)) - pv_log_sigma);
