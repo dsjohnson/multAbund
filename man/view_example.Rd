@@ -13,4 +13,3 @@ The demo is similar to a vigette but it takes much too long to build.
 \author{
 Devin S. Johnson
 }
-

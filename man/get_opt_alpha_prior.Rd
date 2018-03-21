@@ -16,10 +16,9 @@ vector of length \code{n} which contains the prior probabilities for each group 
 This function uses the method of Dorazio (2009) to calculate the parameters of a gamma prior on the Dirichlet process such that the induced distribution function
 of the number of clusters is equal to 1/k.
 }
-\author{
-Devin S. Johnson
-}
 \references{
 Dorazio, R. M. (2009) On selecting a prior for the precision parameter of Dirichlet process mixture models. Journal of Statistical Planning and Inference 139:3384-3390.
 }
-
+\author{
+Devin S. Johnson
+}

@@ -8,8 +8,8 @@
 #' \tabular{ll}{ 
 #' Package: \tab multAbund\cr 
 #' Type: \tab Package\cr 
-#' Version: \tab 0.02\cr 
-#' Date: \tab January 12, 2016\cr 
+#' Version: \tab 0.03\cr 
+#' Date: \tab March 20, 2018\cr 
 #' License: \tab CC0 \cr 
 #' LazyLoad: \tab yes\cr 
 #' }

@@ -61,7 +61,7 @@ by typing \verb{vignette("simulation_demo", package="multAbund")}. The vignette 
 uses a realistic number of iterations, so, if the user decides to run the associated \verb{R}
 code it will take some time.
 }
+
 \author{
 Devin S. Johnson
 }
-

@@ -4,8 +4,8 @@
 \alias{make_data_list}
 \title{Make necessary data matrices for multivariate abundance and occurence RJMCMC functions}
 \usage{
-make_data_list(counts = NULL, occur = NULL, delta_model, X_model,
-  sigma_model = ~1, gamma_model = ~1, data)
+make_data_list(counts = NULL, occur = NULL, z_col = NULL, delta_model,
+  X_model, sigma_model = ~1, gamma_model = ~1, data)
 }
 \arguments{
 \item{counts}{A character string providing the name of the column in \verb{data} that contains the counts}
@@ -24,8 +24,9 @@ make_data_list(counts = NULL, occur = NULL, delta_model, X_model,
 }
 \value{
 A list containing the following elements:
-\item{n}{A vector of counts, or,}
-\item{y}{A vector of binary occurence data}
+\item{counts}{The column containing count data}
+\item{occur}{The column containing occurence data}
+\item{z_col}{The column containing Gaussian response data}
 \item{H}{The environmental variables from which the clustering is based}
 \item{X}{The design matrix for the global covariates}
 \item{D}{Design matrix defining sigma_ij}
@@ -38,4 +39,3 @@ Makes the necessary lists for imput into the RJMCMC fitting functions
 \author{
 Devin S. Johnson
 }
-

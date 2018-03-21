@@ -55,4 +55,3 @@ Here are some details.
 \author{
 Devin S. Johnson
 }
-

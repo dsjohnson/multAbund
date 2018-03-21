@@ -2,6 +2,7 @@
 
 export(get_opt_alpha_prior)
 export(make_data_list)
+export(mult_abund_norm)
 export(mult_abund_pois)
 export(mult_abund_probit)
 export(mult_abund_zip)

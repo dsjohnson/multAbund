@@ -91,6 +91,14 @@ double ln_logis(const arma::vec& x, const double& mu, const double& scale){
   return sum(out);
 }
 
+double ln_logistic_beta(const arma::vec& x, const double& a, const double& b){
+  arma::vec out(x.n_elem);
+  for(int i=0; i<x.n_elem; i++){
+    out(i) = R::dbeta(R::plogis(x(i),0,1,1,0), a, b, 1) + x(i) - 2*log(1+exp(x(i)));
+  }
+  return sum(out);
+}
+
 
 double ln_t_2(const double& x, const double& scale, const double& df){
   double out;

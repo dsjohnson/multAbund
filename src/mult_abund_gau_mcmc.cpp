@@ -22,38 +22,24 @@ double ln_t_2(const double& x, const double& scale, const double& df);
 double ln_crp(const double& log_alpha, const arma::mat& C_pi);
 arma::mat LtoC(const arma::mat& L);
 arma::mat rmult(const arma::vec& sigma, const arma::mat& X);
-double ln_zip(const int& x, const double& p, const double& lb);
-double ln_zip_vec(const arma::vec& x, const arma::vec& p, const arma::vec& lb);
-arma::vec logit_inv(const arma::vec& x);
-arma::vec logit(const arma::vec& p);
-arma::vec arma_rbern(const arma::vec& p);
-double ln_logis(const arma::vec& x, const double& mu, const double& scale);
-double ln_logistic_beta(const arma::vec& x, const double& a, const double& b);
 arma::vec arma_rpois(const arma::vec& lam);
 
 // [[Rcpp::export]]
-List mult_zip_mcmc(
+List mult_norm_mcmc(
     const Rcpp::List& data_list,
     const Rcpp::List& initial_list, 
     const Rcpp::List& prior_list, 
     const int& block, 
     const int& begin_group_update,
-    const int& max_adapt,
-    const bool& update_omega,
     const int& burn, 
     const int& iter
 ) {
   
   //matrices for fitting
-  arma::vec n = as<arma::vec>(data_list["n"]);
+  arma::vec z = as<arma::vec>(data_list["z"]);
   arma::mat H = as<arma::mat>(data_list["H"]);
   arma::mat X = as<arma::mat>(data_list["X"]);
   arma::mat D = as<arma::mat>(data_list["D"]);
-  arma::mat M = as<arma::mat>(data_list["M"]);
-  //   arma::mat H_pred = as<arma::mat>(pred_list["H"]);
-  //   arma::mat X_pred = as<arma::mat>(pred_list["X"]);
-  //   arma::mat D_pred = as<arma::mat>(pred_list["D"]);
-  //   arma::mat M_pred = as<arma::mat>(pred_list["M"]);
   
   const int J = H.n_rows;
   const int I = X.n_rows/H.n_rows;
@@ -101,24 +87,23 @@ List mult_zip_mcmc(
   arma::vec sigma2_z = exp(2*D*log_sigma) + 1.0E-8;
   arma::vec sigma2_z_prop = sigma2_z;
   
-  // Rcout << "Sigma initiated" << endl;
+  // Rcout << "C" << endl;
   
   // #omega items
   double phi_omega = as<double>(prior_list["phi_omega"]);
   double df_omega = as<double>(prior_list["df_omega"]);
   arma::mat HtH = H.t()*H;
   arma::mat HtH_inv = inv_sympd(HtH);
-  double ln_det_HtH = log(det(HtH));
   double log_omega = log(as<double>(initial_list["omega"]));
-  double log_omega_prop;
+  double log_omega_prop = 0;
   arma::vec log_omega_store(iter+burn);
   double MHR_omega;
   arma::vec jump_omega(iter+burn, fill::zeros);
   double r_omega;
-  double tune_log_omega = 1;
-  double pv_log_omega = 0.5;
+  double tune_log_omega = 2.4*2.4;
+  double pv_log_omega = 1;
   
-  // Rcout << "omega initiated" << endl;
+  // Rcout << "D" << endl;
   
   // #alpha items
   double a_alpha = as<double>(prior_list["a_alpha"]);
@@ -132,7 +117,7 @@ List mult_zip_mcmc(
   double tune_log_alpha = 2.4*2.4;
   double pv_log_alpha = 1;
   
-  // Rcout << "alpha initiated" << endl;
+  // Rcout << "E" << endl;
   
   // #beta items
   arma::mat Sigma_beta_inv = as<arma::mat>(prior_list["Sigma_beta_inv"]);
@@ -142,23 +127,7 @@ List mult_zip_mcmc(
   arma::vec beta = as<arma::vec>(initial_list["beta"]);
   arma::mat beta_store(iter, p);
   
-  // gamma items 
-  //double phi_lg = as<double>(prior_list["phi_logit_gamma"]);
-  //double df_lg = as<double>(prior_list["df_logit_gamma"]);
-  arma::vec lg = as<arma::vec>(initial_list("logit_gamma"));
-  arma::vec lg_prop = lg;
-  double MHR_lg;
-  arma::mat lg_store(iter+burn, lg.n_elem);
-  arma::vec jump_lg(iter+burn, fill::zeros);
-  double r_lg;
-  double tune_lg = 2.4*2.4/lg.n_elem;
-  arma::mat pv_lg = 0.1*eye(lg.n_elem,lg.n_elem);
-  arma::mat L_lg = chol(pv_lg).t();
-  arma::vec gamma = logit_inv(M*lg);
-  arma::vec gamma_prop = gamma;
-  // arma::vec gamma_pred = logit_inv(M_pred*lg);
-  
-  // Rcout << "gamma initiated" << endl;
+  // Rcout << "F" << endl;
   
   // #delta_pi items
   arma::mat Sigma_delta_pi = kron(eye<mat>(kappa_pi,kappa_pi), exp(2*log_omega)*HtH_inv);
@@ -172,35 +141,11 @@ List mult_zip_mcmc(
   arma::mat A = kron(ones<mat>(kappa_pi,1), eye<mat>(q,q)).t();
   arma::mat to_bar = kron(C_pi, eye<mat>(q,q));
   
-  // Rcout << "Delta initiated" << endl;
+  // Rcout << "G" << endl;
   
   // #z items
-  arma::vec z_prop(I*J);
-  arma::vec U(I*J);
-  arma::vec MHR_z(I*J);
-  arma::mat jump_z(iter+burn, I*J, fill::zeros);
-  arma::uvec jump;
-  arma::vec tune_z(I*J);
-  tune_z.fill(2.4*2.4);
-  arma::vec pv_z(I*J, fill::ones);
-  arma::mat z_store(iter+burn, I*J);
-  arma::vec r_z(I*J);
-  arma::uvec i_uvec(1);
-  arma::mat tune_store(burn+iter, I*J);
-  arma::vec z = log(n+1);
   arma::vec mu_z = X*beta + K_pi*delta_pi;
-  
-  // Rcout << "z initiated" << endl;
-  
-  // other quantities 
-  //   arma::mat pred_store(iter, X_pred.n_rows);
-  //   arma::mat K_pi_pred;
-  //   arma::vec mu_z_pred(X_pred.n_rows);
-  //   arma::vec z_pred(X.n_rows);
-  //   arma::vec sigma2_z_pred(D_pred.n_rows);
-  //   arma::vec n_pred(n.n_elem, fill::zeros);
-  
-  // Rcout << "pred initiated" << endl;
+  arma::mat z_store(iter+burn, I*J);
   
   //Begin MCMC
   Progress prog(iter+burn, true);
@@ -209,35 +154,12 @@ List mult_zip_mcmc(
     
     //update z
     mu_z = X*beta + K_pi*delta_pi;
-    z_prop = z + sqrt(tune_z)%sqrt(pv_z)%armaNorm(I*J);
     for(int j=0; j<I*J; j++){
-      if(is_finite(n(j))){
-        z_prop(j) = z(j) + sqrt(tune_z(j))*sqrt(pv_z(j))*R::norm_rand();
-        MHR_z(j) = exp(
-          // R::dpois(n(j), exp(z_prop(j)), 1) + R::dnorm(z_prop(j), mu_z(j), sqrt(sigma2_z(j)), 1)
-          // - R::dpois(n(j), exp(z(j)), 1) - R::dnorm(z(j),mu_z(j),sqrt(sigma2_z(j)),1)
-          ln_zip(n(j), gamma(j), exp(z_prop(j))) + R::dnorm(z_prop(j), mu_z(j), sqrt(sigma2_z(j)), 1)
-          - ln_zip(n(j), gamma(j), exp(z(j))) - R::dnorm(z(j),mu_z(j),sqrt(sigma2_z(j)),1)
-          
-        );
-      } else{
-        z_prop(j) = R::rnorm(mu_z(j),sqrt(sigma2_z(j)));
-        MHR_z(j) = 1.0;
+      if(!is_finite(z(j))){
+        z(j) = R::rnorm(mu_z(j),sqrt(sigma2_z(j)));
       }
     }
-    jump = find(armaU(I*J)<=MHR_z);
-    z.elem(jump) = z_prop.elem(jump);
-    i_uvec(0)=i;
-    jump_z(i_uvec,jump) = ones<rowvec>(jump.n_elem);
     z_store.row(i) = z.t();
-    
-    // adapt z MH tuning parameter
-    if(i>block & i%block==0 & i<max_adapt){
-      r_z = mean(jump_z.submat(i-block, 0, i, I*J-1)).t();
-      tune_z = exp(log(tune_z) + 2*pow(2, 0.25)*pow(i/block,-0.25)*(r_z-0.234));
-      pv_z = pv_z + pow(i/block,-0.25)*(var(z_store.submat(i-block, 0, i, I*J-1)).t() - pv_z);
-    }
-    tune_store.row(i) = (sqrt(tune_z)%sqrt(pv_z)).t();
     
     // Rcout << "z updated" << endl;
     
@@ -248,29 +170,6 @@ List mult_zip_mcmc(
     if(i>=burn) beta_store.row(i-burn) = beta.t();
     
     // Rcout << "beta updated" << endl;
-    
-    //update logit gamma
-    lg_prop = lg + sqrt(tune_lg)*L_lg*armaNorm(lg.n_elem);
-    gamma_prop = logit_inv(M*lg_prop);
-    MHR_sigma = exp(
-      ln_zip_vec(n, gamma_prop, exp(z)) + ln_logistic_beta(lg_prop, 1,1)
-      - ln_zip_vec(n, gamma, exp(z)) - ln_logistic_beta(lg, 1, 1)
-    );
-    if(R::runif(0,1) <= MHR_sigma){
-      lg = lg_prop;
-      gamma = gamma_prop;
-      jump_lg(i) = 1;
-    }
-    lg_store.row(i) = lg.t();
-    
-    // adapt logit(gamma) MH tuning parameter
-    if(i>block & i%block==0 & i<max_adapt){
-      r_lg = mean(jump_lg.subvec(i-block, i));
-      tune_lg = exp(log(tune_lg) + 2*pow(2, 0.25)*pow(i/block,-0.25)*(r_lg-0.234));
-      pv_lg = pv_lg + pow(i/block,-0.25)*(cov(lg_store.rows(i-block, i)) - pv_lg);
-    }
-    
-    // Rcout << "gamma updated" << endl;
     
     if(i > begin_group_update){
       // update C_pi matrix
@@ -290,7 +189,6 @@ List mult_zip_mcmc(
           ln_link_probs(link) = (kappa_pi*q/2)*log(2*PI) 
             - 0.5*log(det(V_delta_pi_inv))
             + ln_norm(res-K_pi*delta_pi_hat, sigma2_z) 
-            // - (kappa_pi*q*log_omega) + kappa_pi*ln_det_HtH - 0.5*as_scalar(delta_pi_hat.t()*Sigma_delta_pi_inv*delta_pi_hat);
             + ln_mvnorm(delta_pi_hat, Sigma_delta_pi_inv);
         }
         ln_link_probs -= max(ln_link_probs);
@@ -306,9 +204,9 @@ List mult_zip_mcmc(
     }
     if(i>=burn){
       prox_store.slice(i-burn)=C_pi*C_pi.t();
+      // L_store.slice(i-burn) = L;
       kappa_pi_store(i-burn) = kappa_pi;
     }
-    
     // Rcout << "C_pi updated" << endl;
     
     // update delta_pi
@@ -325,43 +223,35 @@ List mult_zip_mcmc(
     // Rcout << "delta updated" << endl;
     
     // update omega
-    if(update_omega){
-      log_omega_prop = log_omega + sqrt(tune_log_omega*pv_log_omega)*R::rnorm(0,1);
-      Sigma_delta_pi_inv_prop = kron(eye<mat>(kappa_pi,kappa_pi), exp(-2*log_omega_prop)*HtH);
-      Sigma_delta_pi_inv = kron(eye<mat>(kappa_pi,kappa_pi), exp(-2*log_omega)*HtH);
-      if(kappa_pi>1){
-        MHR_omega = exp(
-          // - (kappa_pi*q*log_omega_prop) - 0.5*as_scalar(delta_pi.t()*Sigma_delta_pi_inv_prop*delta_pi)
-          ln_mvnorm(delta_pi, Sigma_delta_pi_inv_prop)
-        + ln_t_2(exp(log_omega_prop), phi_omega, df_omega) + log_omega_prop
-        // + (kappa_pi*q*log_omega) + 0.5*as_scalar(delta_pi.t()*Sigma_delta_pi_inv*delta_pi)
-        - ln_mvnorm(delta_pi, Sigma_delta_pi_inv)
-        - ln_t_2(exp(log_omega), phi_omega, df_omega) - log_omega
-        );
-      } else{
-        MHR_omega = exp(
-          ln_t_2(exp(log_omega_prop), phi_omega, df_omega) + log_omega_prop
-        - ln_t_2(exp(log_omega), phi_omega, df_omega) - log_omega
-        );
-      }
-      
-      if(R::runif(0,1) <= MHR_omega){
-        log_omega = log_omega_prop;
-        jump_omega(i) = 1;
-      }
-      log_omega_store.row(i) = log_omega;
-      
-      
-      // adapt log(omega) MH tuning parameter
-      if(i>0 & i%block==0 & i<= begin_group_update){
-        r_omega = mean(jump_omega.subvec(i-block, i));
-        tune_log_omega = exp(log(tune_log_omega) + 2*pow(2, 0.25)*pow(i/block,-0.25)*(r_omega-0.234));
-        pv_log_omega = pv_log_omega + pow(i/block,-0.25)*(var(log_omega_store.subvec(i-block, i)) - pv_log_omega);
-      }
+    log_omega_prop = log_omega + sqrt(tune_log_omega*pv_log_omega)*R::rnorm(0,1);
+    Sigma_delta_pi_inv_prop = kron(eye<mat>(kappa_pi,kappa_pi), exp(-2*log_omega_prop)*HtH);
+    Sigma_delta_pi_inv = kron(eye<mat>(kappa_pi,kappa_pi), exp(-2*log_omega)*HtH);
+    if(kappa_pi>1){
+      MHR_omega = exp(
+        ln_mvnorm(delta_pi, Sigma_delta_pi_inv_prop) 
+      + ln_t_2(exp(log_omega_prop), phi_omega, df_omega) + log_omega_prop
+      - ln_mvnorm(delta_pi, Sigma_delta_pi_inv) 
+      - ln_t_2(exp(log_omega), phi_omega, df_omega) - log_omega
+      );
     } else{
-      log_omega_store.row(i) = log_omega;
+      MHR_omega = exp(
+        ln_t_2(exp(log_omega_prop), phi_omega, df_omega) + log_omega_prop
+      - ln_t_2(exp(log_omega), phi_omega, df_omega) - log_omega
+      );
     }
-    // Rcout << "omega updated" << endl;
+    if(R::runif(0,1) <= MHR_omega){
+      log_omega = log_omega_prop;
+      jump_omega(i) = 1;
+    }
+    log_omega_store.row(i) = log_omega;
+  // Rcout << "omega updated" << endl;
+    
+    // adapt log(omega) MH tuning parameter
+    if(i>0 & i%block==0 & i<= begin_group_update){
+      r_omega = mean(jump_omega.subvec(i-block, i));
+      tune_log_omega = exp(log(tune_log_omega) + pow(i/block,-0.5)*(r_omega-0.234));
+      pv_log_omega = pv_log_omega + pow(i/block,-0.5)*(var(log_omega_store.subvec(i-block, i)) - pv_log_omega);
+    }
     
     // update alpha
     log_alpha_prop = log_alpha + sqrt(tune_log_alpha*pv_log_alpha)*R::rnorm(0,1);
@@ -376,10 +266,10 @@ List mult_zip_mcmc(
     log_alpha_store(i) = log_alpha;
     
     // adapt log(alpha) MH tuning parameter
-    if(i>0 & i%block==0 & i<max_adapt){
+    if(i>0 & i%block==0){
       r_alpha = mean(jump_alpha.subvec(i-block, i));
-      tune_log_alpha = exp(log(tune_log_alpha) + 2*pow(2, 0.25)*pow(i/block,-0.25)*(r_alpha-0.234));
-      pv_log_alpha = pv_log_alpha + pow(i/block,-0.25)*(var(log_alpha_store.subvec(i-block, i)) - pv_log_alpha);
+      tune_log_alpha = exp(log(tune_log_alpha) + pow(i/block,-0.5)*(r_alpha-0.234));
+      pv_log_alpha = pv_log_alpha + pow(i/block,-0.5)*(var(log_alpha_store.subvec(i-block, i)) - pv_log_alpha);
     }
     
     // Rcout << "alpha updated" << endl;
@@ -400,27 +290,14 @@ List mult_zip_mcmc(
     log_sigma_store.row(i) = log_sigma.t();
     
     // adapt log(sigma) MH tuning parameter
-    if(i>block & i%block==0 & i < max_adapt){
+    if(i>0 & i%block==0){
       r_sigma = mean(jump_sigma.subvec(i-block, i));
-      tune_log_sigma = exp(log(tune_log_sigma) + 2*pow(2, 0.25)*pow(i/block,-0.25)*(r_sigma-0.234));
-      pv_log_sigma = pv_log_sigma + pow(i/block,-0.25)*(cov(log_sigma_store.rows(i-block, i)) - pv_log_sigma);
+      tune_log_sigma = exp(log(tune_log_sigma) + pow(i/block,-0.5)*(r_sigma-0.234));
+      pv_log_sigma = pv_log_sigma + sqrt(block/i)*(cov(log_sigma_store.rows(i-block, i)) - pv_log_sigma);
       L_log_sigma = chol(pv_log_sigma).t();
     }
     
     // Rcout << "sigma updated" << endl;
-    
-    // make prediction
-    //     if(i>=burn){
-    //       K_pi_pred = kron(C_pi, H_pred);
-    //       mu_z_pred = X_pred*beta + K_pi_pred*delta_pi;
-    //       sigma2_z_pred = exp(D_pred*log_sigma);
-    //       z_pred = mu_z_pred + sigma2_z_pred%armaNorm(X_pred.n_rows);
-    //       gamma_pred = logit_inv(M_pred*lg);
-    //       n_pred = arma_rpois(exp(z_pred));
-    //       pred_store.row(i-burn) = (arma_rbern(gamma_pred)%n_pred).t();
-    //     }
-    
-    // Rcout << "prediction updated" << endl;
     
     prog.increment();
     
@@ -429,7 +306,6 @@ List mult_zip_mcmc(
   return Rcpp::List::create(
     Rcpp::Named("z") = z_store.rows(burn, burn+iter-1),
     Rcpp::Named("beta") = beta_store,
-    Rcpp::Named("logit_gamma") = lg_store.rows(burn, burn+iter-1),
     Rcpp::Named("delta_bar") = delta_bar_store, 
     Rcpp::Named("prox") = prox_store,
     Rcpp::Named("kappa_pi") = kappa_pi_store,

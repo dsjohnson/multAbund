@@ -2,8 +2,8 @@ Package: multAbund
 Type: Package
 Title: Model Multivariate Abundance and Occurence Using the Dirichlet Process
     Prior
-Version: 0.02
-Date: 2016-1-12
+Version: 0.03
+Date: 2018-3-20
 Author: Devin S. Johnson
 Maintainer: Devin S. Johnson <devin.johnson@noaa.gov>
 Description: This package provides RJMCMC samplers to make Bayesian inference
@@ -17,4 +17,4 @@ Suggests: ggplot2, cowplot, magrittr, reshape2, knitr, rmarkdown, ggdendro
 LinkingTo: Rcpp, RcppArmadillo, RcppProgress
 ByteCompile: TRUE
 NeedsCompilation: yes
-RoxygenNote: 5.0.1
+RoxygenNote: 6.0.1

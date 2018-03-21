@@ -11,8 +11,9 @@
 #' 
 #' @return 
 #' A list containing the following elements:
-#' \item{n}{A vector of counts, or,}
-#' \item{y}{A vector of binary occurence data}
+#' \item{counts}{The column containing count data}
+#' \item{occur}{The column containing occurence data}
+#' \item{z_col}{The column containing Gaussian response data}
 #' \item{H}{The environmental variables from which the clustering is based}
 #' \item{X}{The design matrix for the global covariates}
 #' \item{D}{Design matrix defining sigma_ij}
@@ -23,8 +24,8 @@
 #' 
 #' @export
 
-make_data_list = function(counts=NULL, occur=NULL, delta_model, X_model, sigma_model=~1, gamma_model=~1, data){
-  data = with(data, data[order(species, obs), ])
+make_data_list = function(counts=NULL, occur=NULL, z_col=NULL, delta_model, X_model, sigma_model=~1, gamma_model=~1, data){
+  data = data %>% arrange(species, obs) #with(data, data[order(species, obs), ])
   H_data = model.frame(paste("~", paste(as.character(delta_model)[2], "+ obs")), data)
   H_data = unique(H_data)
   x_form = X_model 
@@ -41,5 +42,6 @@ make_data_list = function(counts=NULL, occur=NULL, delta_model, X_model, sigma_m
   )
   if(!is.null(counts)) out = c(list(n = data[,counts]), out)
   if(!is.null(occur))  out = c(list(y = data[,occur]), out)
+  if(!is.null(z_col))  out = c(list(z = data[,z_col]), out)
   return(out)
 }

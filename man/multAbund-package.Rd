@@ -2,8 +2,8 @@
 % Please edit documentation in R/multAbund-package.R
 \docType{package}
 \name{multAbund-package}
-\alias{multAbund}
 \alias{multAbund-package}
+\alias{multAbund}
 \title{Use Dirichlet Process Prior to Model Multivariate Animal Abundance and Occurance}
 \description{
 Functions for implementing the RJMCMC estimation of multivariate abundence and occurence. 
@@ -14,8 +14,8 @@ functions of common group membership.
 \tabular{ll}{ 
 Package: \tab multAbund\cr 
 Type: \tab Package\cr 
-Version: \tab 0.02\cr 
-Date: \tab January 12, 2016\cr 
+Version: \tab 0.03\cr 
+Date: \tab March 20, 2018\cr 
 License: \tab CC0 \cr 
 LazyLoad: \tab yes\cr 
 }
@@ -25,4 +25,3 @@ Devin S. Johnson
 
 Maintainer: Devin S. Johnson <devin.johnson@noaa.gov>
 }
-
