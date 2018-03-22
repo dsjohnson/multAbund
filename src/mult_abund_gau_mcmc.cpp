@@ -31,6 +31,7 @@ List mult_norm_mcmc(
     const Rcpp::List& prior_list, 
     const int& block, 
     const int& begin_group_update,
+    const bool& update_omega,
     const int& burn, 
     const int& iter
 ) {
@@ -97,6 +98,7 @@ List mult_norm_mcmc(
   double log_omega = log(as<double>(initial_list["omega"]));
   double log_omega_prop = 0;
   arma::vec log_omega_store(iter+burn);
+  log_omega_store += log_omega;
   double MHR_omega;
   arma::vec jump_omega(iter+burn, fill::zeros);
   double r_omega;
@@ -223,36 +225,37 @@ List mult_norm_mcmc(
     // Rcout << "delta updated" << endl;
     
     // update omega
-    log_omega_prop = log_omega + sqrt(tune_log_omega*pv_log_omega)*R::rnorm(0,1);
-    Sigma_delta_pi_inv_prop = kron(eye<mat>(kappa_pi,kappa_pi), exp(-2*log_omega_prop)*HtH);
-    Sigma_delta_pi_inv = kron(eye<mat>(kappa_pi,kappa_pi), exp(-2*log_omega)*HtH);
-    if(kappa_pi>1){
-      MHR_omega = exp(
-        ln_mvnorm(delta_pi, Sigma_delta_pi_inv_prop) 
-      + ln_t_2(exp(log_omega_prop), phi_omega, df_omega) + log_omega_prop
-      - ln_mvnorm(delta_pi, Sigma_delta_pi_inv) 
-      - ln_t_2(exp(log_omega), phi_omega, df_omega) - log_omega
-      );
-    } else{
-      MHR_omega = exp(
-        ln_t_2(exp(log_omega_prop), phi_omega, df_omega) + log_omega_prop
-      - ln_t_2(exp(log_omega), phi_omega, df_omega) - log_omega
-      );
+    if(update_omega){
+      log_omega_prop = log_omega + sqrt(tune_log_omega*pv_log_omega)*R::rnorm(0,1);
+      Sigma_delta_pi_inv_prop = kron(eye<mat>(kappa_pi,kappa_pi), exp(-2*log_omega_prop)*HtH);
+      Sigma_delta_pi_inv = kron(eye<mat>(kappa_pi,kappa_pi), exp(-2*log_omega)*HtH);
+      if(kappa_pi>1){
+        MHR_omega = exp(
+          ln_mvnorm(delta_pi, Sigma_delta_pi_inv_prop) 
+        + ln_t_2(exp(log_omega_prop), phi_omega, df_omega) + log_omega_prop
+        - ln_mvnorm(delta_pi, Sigma_delta_pi_inv) 
+        - ln_t_2(exp(log_omega), phi_omega, df_omega) - log_omega
+        );
+      } else{
+        MHR_omega = exp(
+          ln_t_2(exp(log_omega_prop), phi_omega, df_omega) + log_omega_prop
+        - ln_t_2(exp(log_omega), phi_omega, df_omega) - log_omega
+        );
+      }
+      if(R::runif(0,1) <= MHR_omega){
+        log_omega = log_omega_prop;
+        jump_omega(i) = 1;
+      }
+      log_omega_store.row(i) = log_omega;
+      // Rcout << "omega updated" << endl;
+      
+      // adapt log(omega) MH tuning parameter
+      if(i>0 & i%block==0 & i<= begin_group_update){
+        r_omega = mean(jump_omega.subvec(i-block, i));
+        tune_log_omega = exp(log(tune_log_omega) + 2*pow(2, 0.25)*pow(i/block,-0.25)*(r_omega-0.234));
+        pv_log_omega = pv_log_omega + pow(i/block,-0.25)*(var(log_omega_store.subvec(i-block, i)) - pv_log_omega);
+      }
     }
-    if(R::runif(0,1) <= MHR_omega){
-      log_omega = log_omega_prop;
-      jump_omega(i) = 1;
-    }
-    log_omega_store.row(i) = log_omega;
-  // Rcout << "omega updated" << endl;
-    
-    // adapt log(omega) MH tuning parameter
-    if(i>0 & i%block==0 & i<= begin_group_update){
-      r_omega = mean(jump_omega.subvec(i-block, i));
-      tune_log_omega = exp(log(tune_log_omega) + pow(i/block,-0.5)*(r_omega-0.234));
-      pv_log_omega = pv_log_omega + pow(i/block,-0.5)*(var(log_omega_store.subvec(i-block, i)) - pv_log_omega);
-    }
-    
     // update alpha
     log_alpha_prop = log_alpha + sqrt(tune_log_alpha*pv_log_alpha)*R::rnorm(0,1);
     MHR_alpha = exp(
@@ -266,10 +269,10 @@ List mult_norm_mcmc(
     log_alpha_store(i) = log_alpha;
     
     // adapt log(alpha) MH tuning parameter
-    if(i>0 & i%block==0){
-      r_alpha = mean(jump_alpha.subvec(i-block, i));
-      tune_log_alpha = exp(log(tune_log_alpha) + pow(i/block,-0.5)*(r_alpha-0.234));
-      pv_log_alpha = pv_log_alpha + pow(i/block,-0.5)*(var(log_alpha_store.subvec(i-block, i)) - pv_log_alpha);
+    if(i>0 & i%block==0 & i<= begin_group_update){
+      r_omega = mean(jump_omega.subvec(i-block, i));
+      tune_log_omega = exp(log(tune_log_omega) + 2*pow(2, 0.25)*pow(i/block,-0.25)*(r_omega-0.234));
+      pv_log_omega = pv_log_omega + pow(i/block,-0.25)*(var(log_omega_store.subvec(i-block, i)) - pv_log_omega);
     }
     
     // Rcout << "alpha updated" << endl;
@@ -290,10 +293,10 @@ List mult_norm_mcmc(
     log_sigma_store.row(i) = log_sigma.t();
     
     // adapt log(sigma) MH tuning parameter
-    if(i>0 & i%block==0){
+    if(i>block & i%block==0){
       r_sigma = mean(jump_sigma.subvec(i-block, i));
-      tune_log_sigma = exp(log(tune_log_sigma) + pow(i/block,-0.5)*(r_sigma-0.234));
-      pv_log_sigma = pv_log_sigma + sqrt(block/i)*(cov(log_sigma_store.rows(i-block, i)) - pv_log_sigma);
+      tune_log_sigma = exp(log(tune_log_sigma) + 2*pow(2, 0.25)*pow(i/block,-0.25)*(r_sigma-0.234));
+      pv_log_sigma = pv_log_sigma + pow(i/block,-0.25)*(cov(log_sigma_store.rows(i-block, i)) - pv_log_sigma);
       L_log_sigma = chol(pv_log_sigma).t();
     }
     

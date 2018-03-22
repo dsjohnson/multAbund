@@ -7,8 +7,8 @@
 using namespace Rcpp;
 
 // mult_norm_mcmc
-List mult_norm_mcmc(const Rcpp::List& data_list, const Rcpp::List& initial_list, const Rcpp::List& prior_list, const int& block, const int& begin_group_update, const int& burn, const int& iter);
-RcppExport SEXP _multAbund_mult_norm_mcmc(SEXP data_listSEXP, SEXP initial_listSEXP, SEXP prior_listSEXP, SEXP blockSEXP, SEXP begin_group_updateSEXP, SEXP burnSEXP, SEXP iterSEXP) {
+List mult_norm_mcmc(const Rcpp::List& data_list, const Rcpp::List& initial_list, const Rcpp::List& prior_list, const int& block, const int& begin_group_update, const bool& update_omega, const int& burn, const int& iter);
+RcppExport SEXP _multAbund_mult_norm_mcmc(SEXP data_listSEXP, SEXP initial_listSEXP, SEXP prior_listSEXP, SEXP blockSEXP, SEXP begin_group_updateSEXP, SEXP update_omegaSEXP, SEXP burnSEXP, SEXP iterSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -17,9 +17,10 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Rcpp::List& >::type prior_list(prior_listSEXP);
     Rcpp::traits::input_parameter< const int& >::type block(blockSEXP);
     Rcpp::traits::input_parameter< const int& >::type begin_group_update(begin_group_updateSEXP);
+    Rcpp::traits::input_parameter< const bool& >::type update_omega(update_omegaSEXP);
     Rcpp::traits::input_parameter< const int& >::type burn(burnSEXP);
     Rcpp::traits::input_parameter< const int& >::type iter(iterSEXP);
-    rcpp_result_gen = Rcpp::wrap(mult_norm_mcmc(data_list, initial_list, prior_list, block, begin_group_update, burn, iter));
+    rcpp_result_gen = Rcpp::wrap(mult_norm_mcmc(data_list, initial_list, prior_list, block, begin_group_update, update_omega, burn, iter));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -41,8 +42,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // mult_occ_mcmc
-List mult_occ_mcmc(const Rcpp::List& data_list, const Rcpp::List& initial_list, const Rcpp::List& prior_list, const int& block, const int& begin_group_update, const int& burn, const int& iter);
-RcppExport SEXP _multAbund_mult_occ_mcmc(SEXP data_listSEXP, SEXP initial_listSEXP, SEXP prior_listSEXP, SEXP blockSEXP, SEXP begin_group_updateSEXP, SEXP burnSEXP, SEXP iterSEXP) {
+List mult_occ_mcmc(const Rcpp::List& data_list, const Rcpp::List& initial_list, const Rcpp::List& prior_list, const int& block, const int& begin_group_update, const bool& update_omega, const int& burn, const int& iter);
+RcppExport SEXP _multAbund_mult_occ_mcmc(SEXP data_listSEXP, SEXP initial_listSEXP, SEXP prior_listSEXP, SEXP blockSEXP, SEXP begin_group_updateSEXP, SEXP update_omegaSEXP, SEXP burnSEXP, SEXP iterSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -51,15 +52,16 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Rcpp::List& >::type prior_list(prior_listSEXP);
     Rcpp::traits::input_parameter< const int& >::type block(blockSEXP);
     Rcpp::traits::input_parameter< const int& >::type begin_group_update(begin_group_updateSEXP);
+    Rcpp::traits::input_parameter< const bool& >::type update_omega(update_omegaSEXP);
     Rcpp::traits::input_parameter< const int& >::type burn(burnSEXP);
     Rcpp::traits::input_parameter< const int& >::type iter(iterSEXP);
-    rcpp_result_gen = Rcpp::wrap(mult_occ_mcmc(data_list, initial_list, prior_list, block, begin_group_update, burn, iter));
+    rcpp_result_gen = Rcpp::wrap(mult_occ_mcmc(data_list, initial_list, prior_list, block, begin_group_update, update_omega, burn, iter));
     return rcpp_result_gen;
 END_RCPP
 }
 // mult_zip_mcmc
-List mult_zip_mcmc(const Rcpp::List& data_list, const Rcpp::List& initial_list, const Rcpp::List& prior_list, const int& block, const int& begin_group_update, const int& max_adapt, const bool& update_omega, const int& burn, const int& iter);
-RcppExport SEXP _multAbund_mult_zip_mcmc(SEXP data_listSEXP, SEXP initial_listSEXP, SEXP prior_listSEXP, SEXP blockSEXP, SEXP begin_group_updateSEXP, SEXP max_adaptSEXP, SEXP update_omegaSEXP, SEXP burnSEXP, SEXP iterSEXP) {
+List mult_zip_mcmc(const Rcpp::List& data_list, const Rcpp::List& initial_list, const Rcpp::List& prior_list, const int& block, const int& begin_group_update, const bool& update_omega, const int& burn, const int& iter);
+RcppExport SEXP _multAbund_mult_zip_mcmc(SEXP data_listSEXP, SEXP initial_listSEXP, SEXP prior_listSEXP, SEXP blockSEXP, SEXP begin_group_updateSEXP, SEXP update_omegaSEXP, SEXP burnSEXP, SEXP iterSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -68,11 +70,10 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Rcpp::List& >::type prior_list(prior_listSEXP);
     Rcpp::traits::input_parameter< const int& >::type block(blockSEXP);
     Rcpp::traits::input_parameter< const int& >::type begin_group_update(begin_group_updateSEXP);
-    Rcpp::traits::input_parameter< const int& >::type max_adapt(max_adaptSEXP);
     Rcpp::traits::input_parameter< const bool& >::type update_omega(update_omegaSEXP);
     Rcpp::traits::input_parameter< const int& >::type burn(burnSEXP);
     Rcpp::traits::input_parameter< const int& >::type iter(iterSEXP);
-    rcpp_result_gen = Rcpp::wrap(mult_zip_mcmc(data_list, initial_list, prior_list, block, begin_group_update, max_adapt, update_omega, burn, iter));
+    rcpp_result_gen = Rcpp::wrap(mult_zip_mcmc(data_list, initial_list, prior_list, block, begin_group_update, update_omega, burn, iter));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -125,10 +126,10 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_multAbund_mult_norm_mcmc", (DL_FUNC) &_multAbund_mult_norm_mcmc, 7},
+    {"_multAbund_mult_norm_mcmc", (DL_FUNC) &_multAbund_mult_norm_mcmc, 8},
     {"_multAbund_mult_pois_mcmc", (DL_FUNC) &_multAbund_mult_pois_mcmc, 7},
-    {"_multAbund_mult_occ_mcmc", (DL_FUNC) &_multAbund_mult_occ_mcmc, 7},
-    {"_multAbund_mult_zip_mcmc", (DL_FUNC) &_multAbund_mult_zip_mcmc, 9},
+    {"_multAbund_mult_occ_mcmc", (DL_FUNC) &_multAbund_mult_occ_mcmc, 8},
+    {"_multAbund_mult_zip_mcmc", (DL_FUNC) &_multAbund_mult_zip_mcmc, 8},
     {"_multAbund_pois_reg_mcmc", (DL_FUNC) &_multAbund_pois_reg_mcmc, 6},
     {"_multAbund_probit_reg_mcmc", (DL_FUNC) &_multAbund_probit_reg_mcmc, 5},
     {"_multAbund_zip_reg_mcmc", (DL_FUNC) &_multAbund_zip_reg_mcmc, 6},

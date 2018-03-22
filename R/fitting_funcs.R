@@ -188,7 +188,7 @@ mult_abund_pois = function(data_list, initial_list, prior_list,
 #' @author Devin S. Johnson
 #' @export
 mult_abund_probit = function(data_list, prior_list, initial_list, 
-                             block, begin_group_update, 
+                             block, begin_group_update, update_omega,
                              burn, iter){
   out = mult_occ_mcmc(
     data_list=data_list, 
@@ -196,6 +196,7 @@ mult_abund_probit = function(data_list, prior_list, initial_list,
     prior_list=prior_list,
     block=block, 
     begin_group_update=begin_group_update, 
+    update_omega=update_omega,
     burn=burn, 
     iter=iter
   )

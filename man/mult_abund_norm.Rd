@@ -6,7 +6,7 @@
 observations}
 \usage{
 mult_abund_norm(data_list, initial_list, prior_list, block, begin_group_update,
-  max_adapt, update_omega = T, burn, iter)
+  update_omega = T, burn, iter)
 }
 \arguments{
 \item{data_list}{A named list created of data items created from user data with the 
@@ -21,8 +21,6 @@ list.}
 \item{begin_group_update}{The iteration at with the group clusters begin updating.
 The RJMCMC often performs better when the chain is allowed to sample only the parameters 
 before the groups begin updating.}
-
-\item{max_adapt}{maximum number of iterations that proposals are adapted}
 
 \item{update_omega}{Logical. Should omega be updated or not?}
 
