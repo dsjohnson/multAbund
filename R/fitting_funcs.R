@@ -101,6 +101,12 @@ mult_abund_norm = function(data_list, initial_list, prior_list,
     burn=burn, 
     iter=iter
   )
+  om_var = attr(terms(data_list$delta_model), "term.labels")
+  if(attr(terms(data_list$delta_model), "intercept") == 1) om_var = c("(Intercept)", om_var) 
+  colnames(out$omega) = om_var
+  colnames(out$beta) = colnames(data_list$X)
+  colnames(out$delta_bar) = do.call(paste, expand.grid(paste('/',colnames(data_list$H)), levels(factor(data_list$data$species)))[,2:1])
+  colnames(out$sigma) = colnames(data_list$D)
   return(out)
 }
 

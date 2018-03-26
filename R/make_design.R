@@ -40,6 +40,10 @@ make_data_list = function(counts=NULL, occur=NULL, z_col=NULL, delta_model, X_mo
     sigma_model=sigma_model,
     gamma_model=gamma_model
   )
+  out$G = model.matrix(~0+var, data.frame(var=factor(attr(out$H, "assign"))))
+  out$n = NULL
+  out$y = NULL
+  out$z = NULL
   if(!is.null(counts)) out = c(list(n = data[,counts]), out)
   if(!is.null(occur))  out = c(list(y = data[,occur]), out)
   if(!is.null(z_col))  out = c(list(z = data[,z_col]), out)

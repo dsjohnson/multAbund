@@ -34,8 +34,9 @@ arma::vec armaU(int n){
   arma::vec out(x.begin(), x.size(), false);
   return out;
 }
-arma::vec GCN(const arma::mat& V, const arma::vec& v){
-  arma::mat out = solve(V,v) + solve(chol(V), armaNorm(v.n_elem));
+
+arma::vec GCN(const arma::mat& M, const arma::vec& m){
+  arma::vec out = solve(M,m) + solve(chol(M), armaNorm(m.n_elem));
   return out;
 }
 

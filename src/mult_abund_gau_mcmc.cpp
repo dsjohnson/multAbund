@@ -37,10 +37,12 @@ List mult_norm_mcmc(
 ) {
   
   //matrices for fitting
-  arma::vec z = as<arma::vec>(data_list["z"]);
+  arma::vec z_orig = as<arma::vec>(data_list["z"]);
+  arma::vec z = z_orig;
   arma::mat H = as<arma::mat>(data_list["H"]);
   arma::mat X = as<arma::mat>(data_list["X"]);
   arma::mat D = as<arma::mat>(data_list["D"]);
+  arma::mat G = as<arma::mat>(data_list["G"]);
   
   const int J = H.n_rows;
   const int I = X.n_rows/H.n_rows;
@@ -93,17 +95,20 @@ List mult_norm_mcmc(
   // #omega items
   double phi_omega = as<double>(prior_list["phi_omega"]);
   double df_omega = as<double>(prior_list["df_omega"]);
+  arma::vec log_omega_scale = log(as<arma::vec>(prior_list["omega_scale"]));
   arma::mat HtH = H.t()*H;
   arma::mat HtH_inv = inv_sympd(HtH);
-  double log_omega = log(as<double>(initial_list["omega"]));
-  double log_omega_prop = 0;
-  arma::vec log_omega_store(iter+burn);
-  log_omega_store += log_omega;
+  arma::vec log_omega = log(as<arma::vec>(initial_list["omega"]));
+  arma::vec log_omega_prop = log_omega;
+  arma::mat Omega_inv = diagmat(1/(exp(2*G*log_omega +2*log_omega_scale) + 1.0e-8));
+  arma::mat Omega_inv_prop = Omega_inv;
+  arma::mat log_omega_store(iter+burn, log_omega.n_elem);
   double MHR_omega;
   arma::vec jump_omega(iter+burn, fill::zeros);
   double r_omega;
-  double tune_log_omega = 2.4*2.4;
-  double pv_log_omega = 1;
+  double tune_log_omega = 2.4*2.4/log_omega.n_elem;
+  arma::mat pv_log_omega = 0.1*eye(log_omega.n_elem,log_omega.n_elem);
+  arma::mat L_log_omega = chol(pv_log_omega).t();
   
   // Rcout << "D" << endl;
   
@@ -132,8 +137,8 @@ List mult_norm_mcmc(
   // Rcout << "F" << endl;
   
   // #delta_pi items
-  arma::mat Sigma_delta_pi = kron(eye<mat>(kappa_pi,kappa_pi), exp(2*log_omega)*HtH_inv);
-  arma::mat Sigma_delta_pi_inv = kron(eye<mat>(kappa_pi,kappa_pi), exp(-2*log_omega)*HtH);
+  arma::mat Sigma_delta_pi = kron(eye<mat>(kappa_pi,kappa_pi), Omega_inv.i());
+  arma::mat Sigma_delta_pi_inv = kron(eye<mat>(kappa_pi,kappa_pi), Omega_inv);
   arma::mat Sigma_delta_pi_inv_prop;
   arma::mat V_delta_pi_inv(kappa_pi*q,kappa_pi*q);
   arma::mat V_delta_pi(kappa_pi*q,kappa_pi*q);
@@ -157,7 +162,7 @@ List mult_norm_mcmc(
     //update z
     mu_z = X*beta + K_pi*delta_pi;
     for(int j=0; j<I*J; j++){
-      if(!is_finite(z(j))){
+      if(!is_finite(z_orig(j))){
         z(j) = R::rnorm(mu_z(j),sqrt(sigma2_z(j)));
       }
     }
@@ -185,7 +190,7 @@ List mult_norm_mcmc(
           C_pi = LtoC(L);
           kappa_pi = C_pi.n_cols;
           K_pi = kron(C_pi, H);
-          Sigma_delta_pi_inv = kron(eye<mat>(kappa_pi,kappa_pi), exp(-2*log_omega)*HtH);
+          Sigma_delta_pi_inv = kron(eye<mat>(kappa_pi,kappa_pi), Omega_inv);
           V_delta_pi_inv = K_pi.t()*rmult(1/sigma2_z,K_pi) + Sigma_delta_pi_inv; 
           delta_pi_hat = solve(V_delta_pi_inv, K_pi.t()*(res/sigma2_z));
           ln_link_probs(link) = (kappa_pi*q/2)*log(2*PI) 
@@ -212,7 +217,7 @@ List mult_norm_mcmc(
     // Rcout << "C_pi updated" << endl;
     
     // update delta_pi
-    Sigma_delta_pi_inv = kron(eye<mat>(kappa_pi,kappa_pi), exp(-2*log_omega)*HtH);
+    Sigma_delta_pi_inv = kron(eye<mat>(kappa_pi,kappa_pi), Omega_inv);
     V_delta_pi_inv = K_pi.t()*rmult(1/sigma2_z, K_pi) + Sigma_delta_pi_inv; 
     v_delta_pi = K_pi.t()*((z-X*beta)/sigma2_z);
     delta_pi = GCN(V_delta_pi_inv, v_delta_pi);
@@ -226,35 +231,44 @@ List mult_norm_mcmc(
     
     // update omega
     if(update_omega){
-      log_omega_prop = log_omega + sqrt(tune_log_omega*pv_log_omega)*R::rnorm(0,1);
-      Sigma_delta_pi_inv_prop = kron(eye<mat>(kappa_pi,kappa_pi), exp(-2*log_omega_prop)*HtH);
-      Sigma_delta_pi_inv = kron(eye<mat>(kappa_pi,kappa_pi), exp(-2*log_omega)*HtH);
-      if(kappa_pi>1){
+      log_omega_prop = log_omega + sqrt(tune_log_omega)*L_log_omega*armaNorm(log_omega.n_elem);
+      Omega_inv_prop = diagmat(1/(exp(2*G*log_omega_prop + 2*log_omega_scale) + 1.0e-8));
+      Sigma_delta_pi_inv_prop = kron(eye<mat>(kappa_pi,kappa_pi), Omega_inv_prop);
+      Sigma_delta_pi_inv = kron(eye<mat>(kappa_pi,kappa_pi), Omega_inv);
+     if(kappa_pi>1){
         MHR_omega = exp(
           ln_mvnorm(delta_pi, Sigma_delta_pi_inv_prop) 
-        + ln_t_2(exp(log_omega_prop), phi_omega, df_omega) + log_omega_prop
+        + ln_t(exp(log_omega_prop), phi_omega, df_omega) + sum(log_omega_prop)
         - ln_mvnorm(delta_pi, Sigma_delta_pi_inv) 
-        - ln_t_2(exp(log_omega), phi_omega, df_omega) - log_omega
+        - ln_t(exp(log_omega), phi_omega, df_omega) - sum(log_omega)
         );
       } else{
         MHR_omega = exp(
-          ln_t_2(exp(log_omega_prop), phi_omega, df_omega) + log_omega_prop
-        - ln_t_2(exp(log_omega), phi_omega, df_omega) - log_omega
+          ln_t(exp(log_omega_prop), phi_omega, df_omega) + sum(log_omega_prop)
+        - ln_t(exp(log_omega), phi_omega, df_omega) - sum(log_omega)
         );
       }
+      
+      // Rcout << MHR_omega << endl;
+      
       if(R::runif(0,1) <= MHR_omega){
         log_omega = log_omega_prop;
+        Omega_inv = Omega_inv_prop;
         jump_omega(i) = 1;
       }
-      log_omega_store.row(i) = log_omega;
-      // Rcout << "omega updated" << endl;
+      log_omega_store.row(i) = log_omega.t();
       
       // adapt log(omega) MH tuning parameter
-      if(i>0 & i%block==0 & i<= begin_group_update){
+      if(i>block & i%block==0 & i<= begin_group_update){
         r_omega = mean(jump_omega.subvec(i-block, i));
         tune_log_omega = exp(log(tune_log_omega) + 2*pow(2, 0.25)*pow(i/block,-0.25)*(r_omega-0.234));
-        pv_log_omega = pv_log_omega + pow(i/block,-0.25)*(var(log_omega_store.subvec(i-block, i)) - pv_log_omega);
+        pv_log_omega = pv_log_omega + pow(i/block,-0.25)*(cov(log_omega_store.rows(i-block, i)) - pv_log_omega);
+        // Rcout << r_omega<< endl << endl << pv_log_omega << endl;
+        L_log_omega = chol(pv_log_omega).t();
+        // Rcout << "r_omega = " << r_omega << "   tune_log_omega = " << tune_log_omega << endl;
       }
+      
+      // Rcout << "omega updated" << endl;
     }
     // update alpha
     log_alpha_prop = log_alpha + sqrt(tune_log_alpha*pv_log_alpha)*R::rnorm(0,1);
@@ -269,10 +283,10 @@ List mult_norm_mcmc(
     log_alpha_store(i) = log_alpha;
     
     // adapt log(alpha) MH tuning parameter
-    if(i>0 & i%block==0 & i<= begin_group_update){
-      r_omega = mean(jump_omega.subvec(i-block, i));
-      tune_log_omega = exp(log(tune_log_omega) + 2*pow(2, 0.25)*pow(i/block,-0.25)*(r_omega-0.234));
-      pv_log_omega = pv_log_omega + pow(i/block,-0.25)*(var(log_omega_store.subvec(i-block, i)) - pv_log_omega);
+    if(i>block & i%block==0){
+      r_alpha = mean(jump_alpha.subvec(i-block, i));
+      tune_log_alpha = exp(log(tune_log_alpha) + 2*pow(2, 0.25)*pow(i/block,-0.25)*(r_alpha-0.234));
+      pv_log_alpha = pv_log_alpha + pow(i/block,-0.25)*(var(log_alpha_store.subvec(i-block, i)) - pv_log_alpha);
     }
     
     // Rcout << "alpha updated" << endl;
@@ -312,7 +326,7 @@ List mult_norm_mcmc(
     Rcpp::Named("delta_bar") = delta_bar_store, 
     Rcpp::Named("prox") = prox_store,
     Rcpp::Named("kappa_pi") = kappa_pi_store,
-    Rcpp::Named("omega")=exp(log_omega_store(span(burn, burn+iter-1))),
+    Rcpp::Named("omega")=exp(log_omega_store.rows(burn,iter+burn-1)),
     Rcpp::Named("alpha")=exp(log_alpha_store(span(burn, burn+iter-1))),
     Rcpp::Named("sigma")=exp(log_sigma_store.rows(burn,iter+burn-1))//,
     // Rcpp::Named("pred")=pred_store
