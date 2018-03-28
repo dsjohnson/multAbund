@@ -80,9 +80,6 @@ cnt_dat$count = rpois(n=length(z), exp(z))
 data_mats = make_data_list(counts="count", delta_model = delta_model, 
                            X_model = X_model, data=cnt_dat, 
                            sigma_model=~1)
-pred_mats = make_data_list(counts="count", delta_model = delta_model, 
-                           X_model = X_model, data=cnt_dat, 
-                           sigma_model=~1)
 ```
 
 ## 5. Prior paramters and initial values
@@ -129,7 +126,6 @@ iter=50000
 
 fit = mult_abund_pois(
   data_list=data_mats,
-  pred_list = data_mats,
   initial_list = inits,
   prior_list = prior_parm,
   block = block, 
