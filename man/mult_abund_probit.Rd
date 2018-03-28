@@ -3,16 +3,16 @@
 \name{mult_abund_probit}
 \alias{mult_abund_probit}
 \title{Perform RJMCMC for posterior sampling of multivariate cluster occurence 
-model with Bernoulli observations
-#' @description Fit a Dirichlet Process random effect model for joint species distribution inference of binary occurence data using 
-a RJMCMC procedure.}
+model with Bernoulli observations}
 \usage{
 mult_abund_probit(data_list, prior_list, initial_list, block,
-  begin_group_update, burn, iter)
+  begin_group_update, update_omega, burn, iter)
 }
 \arguments{
 \item{data_list}{A named list created of data items created from user data with the 
 function \code{multAbund::make_data_list}. This data will be used for model fitting.}
+
+\item{prior_list}{A named list of prior parameters. See details.}
 
 \item{initial_list}{A named list of initial values for the parameters (see details). 
 The functions \code{multAbund::sugs} or \code{multAbund::make_inits} can be used to create this
@@ -24,33 +24,28 @@ list.}
 The RJMCMC often performs better when the chain is allowed to sample only the parameters 
 before the groups begin updating.}
 
+\item{update_omega}{logical. Should omega be updated during the MCMC or remain fixed.}
+
 \item{burn}{Number of burnin iterations that are discarded.}
 
 \item{iter}{Number of iterations retained for posterior inference.}
-
-\item{phi_beta}{Scale parameter for the prior covariance of \verb{beta}. The covariance 
-is defined to be \verb{phi_beta^2*solve(X'X)}, where \code{X} is the design matrix 
-for the covariates associated with \verb{beta}}
-
-\item{mu_beta}{Prior mean of \verb{beta}.}
-
-\item{phi_omega}{Scale parameter for omega prior. The omega prior is a half-t
-distribution.}
-
-\item{df_omega}{Degrees of freedom for the omega prior distribution. 
-If \verb{df_omega > 50} then the prior is set to a half-normal distribution rather
-than a half-t. If \verb{df_omega = 1}, then a half-Cauchy distribution is used.}
-
-\item{a_alpha}{Shape parameter for the gamma distribution of the \verb{alpha} parameter.}
-
-\item{b_alpha}{Rate parameter for the gamma distribution of the \verb{alpha} parameter.}
 }
 \description{
 Fit a Dirichlet Process random effect model for joint species distribution inference of binary occurence data using 
 a RJMCMC procedure.
 }
 \details{
-Here are some details.
+The \code{prior_list} argument needs to contain the following items:
+\itemize{
+\item a_alpha numeric. shape parameter for gamma prior on alpha,
+\item b_alpha numeric. scale parameter for gamma prior on alpha,
+\item Sigma_beta_inv numeric matrix. precision matrix for global regression coefficients, beta
+\item mu_beta numeric vector. prior mean of beta parameters
+\item phi_omega numeric. scale for half t/normal prior on delta variance parameter (omega),
+\item df_omega numeric. degrees of freedom for half-t prior on omega (df_omega>=50 means a half-normal will be assumed)
+\item phi_sigma numeric. scale parameter for half-t/normal prior for sigma parameters
+\item df_sigma numeric. degrees of freedom for sigma prior (>=50 implies half-normal will be used)
+}
 }
 \author{
 Devin S. Johnson

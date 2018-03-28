@@ -12,6 +12,8 @@ make_data_list(counts = NULL, occur = NULL, z_col = NULL, delta_model,
 
 \item{occur}{A character string providing the name of the column in \verb{data} that contains the binary occurence data}
 
+\item{z_col}{A character string providing the name of the column in \verb{data} that contains the continuous abundance data}
+
 \item{delta_model}{A formula decribing the variables for which delta will be the coefficients.}
 
 \item{X_model}{A formula giveng additional variables to be used for all groups.}

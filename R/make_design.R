@@ -3,6 +3,7 @@
 #' @description Makes the necessary lists for imput into the RJMCMC fitting functions
 #' @param counts A character string providing the name of the column in \verb{data} that contains the counts
 #' @param occur A character string providing the name of the column in \verb{data} that contains the binary occurence data
+#' @param z_col A character string providing the name of the column in \verb{data} that contains the continuous abundance data
 #' @param delta_model A formula decribing the variables for which delta will be the coefficients.
 #' @param X_model A formula giveng additional variables to be used for all groups. 
 #' @param sigma_model A formula describing the sigma vector. Must be of the form \verb{~factorVariable-1}.
@@ -25,7 +26,7 @@
 #' @export
 
 make_data_list = function(counts=NULL, occur=NULL, z_col=NULL, delta_model, X_model, sigma_model=~1, gamma_model=~1, data){
-  data = data %>% arrange(species, obs) #with(data, data[order(species, obs), ])
+  data = data[order(data$species, data$obs),]
   H_data = model.frame(paste("~", paste(as.character(delta_model)[2], "+ obs")), data)
   H_data = unique(H_data)
   x_form = X_model 

@@ -16,6 +16,8 @@ function \code{multAbund::make_data_list}. This data will be used for model fitt
 The functions \code{multAbund::sugs} or \code{multAbund::make_inits} can be used to create this
 list.}
 
+\item{prior_list}{A named list of prior parameters. See details.}
+
 \item{block}{Number of iterations between Metropolis proposal adaptation.}
 
 \item{begin_group_update}{The iteration at with the group clusters begin updating.
@@ -25,34 +27,23 @@ before the groups begin updating.}
 \item{burn}{Number of burnin iterations that are discarded.}
 
 \item{iter}{Number of iterations retained for posterior inference.}
-
-\item{phi_beta}{Scale parameter for the prior covariance of \verb{beta}. The covariance 
-is defined to be \verb{phi_beta^2*solve(X'X)}, where \code{X} is the design matrix 
-for the covariates associated with \verb{beta}}
-
-\item{mu_beta}{Prior mean of \verb{beta}.}
-
-\item{phi_omega}{Scale parameter for omega prior. The omega prior is a half-t
-distribution.}
-
-\item{df_omega}{Degrees of freedom for the omega prior distribution. 
-If \verb{df_omega > 50} then the prior is set to a half-normal distribution rather
-than a half-t. If \verb{df_omega = 1}, then a half-Cauchy distribution is used.}
-
-\item{a_alpha}{Shape parameter for the gamma distribution of the \verb{alpha} parameter.}
-
-\item{b_alpha}{Rate parameter for the gamma distribution of the \verb{alpha} parameter.}
-
-\item{phi_sigma}{Scale parameter for the half-t prior distribution for \verb{sigma}.}
-
-\item{df_sigma}{Degrees of freedom for \verb{sigma} prior. Follows the same rules as the omega prior specification.}
 }
 \description{
 Fit a Dirichlet Process random effect model for joint species distribution inference of Poisson count data using 
 a RJMCMC procedure.
 }
 \details{
-Here are some details.
+The \code{prior_list} argument needs to contain the following items:
+\itemize{
+\item a_alpha numeric. shape parameter for gamma prior on alpha,
+\item b_alpha numeric. scale parameter for gamma prior on alpha,
+\item Sigma_beta_inv numeric matrix. precision matrix for global regression coefficients, beta
+\item mu_beta numeric vector. prior mean of beta parameters
+\item phi_omega numeric. scale for half t/normal prior on delta variance parameter (omega),
+\item df_omega numeric. degrees of freedom for half-t prior on omega (df_omega>=50 means a half-normal will be assumed)
+\item phi_sigma numeric. scale parameter for half-t/normal prior for sigma parameters
+\item df_sigma numeric. degrees of freedom for sigma prior (>=50 implies half-normal will be used)
+}
 }
 \section{Vignette}{
 

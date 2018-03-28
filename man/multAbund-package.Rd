@@ -14,8 +14,8 @@ functions of common group membership.
 \tabular{ll}{ 
 Package: \tab multAbund\cr 
 Type: \tab Package\cr 
-Version: \tab 0.03\cr 
-Date: \tab March 20, 2018\cr 
+Version: \tab 0.03.9001\cr 
+Date: \tab March 28, 2018\cr 
 License: \tab CC0 \cr 
 LazyLoad: \tab yes\cr 
 }
