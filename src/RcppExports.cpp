@@ -6,6 +6,11 @@
 
 using namespace Rcpp;
 
+#ifdef RCPP_USE_GLOBAL_ROSTREAM
+Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
+Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
+#endif
+
 // mult_norm_mcmc
 List mult_norm_mcmc(const Rcpp::List& data_list, const Rcpp::List& initial_list, const Rcpp::List& prior_list, const int& block, const int& begin_group_update, const bool& update_omega, const int& burn, const int& iter);
 RcppExport SEXP _multAbund_mult_norm_mcmc(SEXP data_listSEXP, SEXP initial_listSEXP, SEXP prior_listSEXP, SEXP blockSEXP, SEXP begin_group_updateSEXP, SEXP update_omegaSEXP, SEXP burnSEXP, SEXP iterSEXP) {

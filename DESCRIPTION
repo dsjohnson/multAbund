@@ -17,4 +17,4 @@ Suggests: ggplot2, cowplot, magrittr, reshape2, knitr, rmarkdown, ggdendro
 LinkingTo: Rcpp, RcppArmadillo, RcppProgress
 ByteCompile: TRUE
 NeedsCompilation: yes
-RoxygenNote: 6.0.1
+RoxygenNote: 7.1.2

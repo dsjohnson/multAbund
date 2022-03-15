@@ -200,7 +200,7 @@ List mult_occ_mcmc(
           Sigma_delta_pi_inv = kron(eye<mat>(kappa_pi,kappa_pi), exp(-2*log_omega)*HtH);
           V_delta_pi_inv = K_pi.t()*K_pi + Sigma_delta_pi_inv; 
           delta_pi_hat = solve(V_delta_pi_inv, K_pi.t()*res);
-          ln_link_probs(link) = (kappa_pi*q/2)*log(2*PI) 
+          ln_link_probs(link) = (kappa_pi*q/2)*log(2*M_PI) 
             - 0.5*log(det(V_delta_pi_inv))
             + ln_norm_2(res-K_pi*delta_pi_hat, 1) 
             + ln_mvnorm(delta_pi_hat, Sigma_delta_pi_inv);

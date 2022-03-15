@@ -5,8 +5,16 @@
 \title{Perform RJMCMC for posterior sampling of multivariate cluster abundance model with Gaussian 
 observations}
 \usage{
-mult_abund_norm(data_list, initial_list, prior_list, block, begin_group_update,
-  update_omega = T, burn, iter)
+mult_abund_norm(
+  data_list,
+  initial_list,
+  prior_list,
+  block,
+  begin_group_update,
+  update_omega = T,
+  burn,
+  iter
+)
 }
 \arguments{
 \item{data_list}{A named list created of data items created from user data with the 

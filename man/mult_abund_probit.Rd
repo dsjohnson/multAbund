@@ -5,8 +5,16 @@
 \title{Perform RJMCMC for posterior sampling of multivariate cluster occurence 
 model with Bernoulli observations}
 \usage{
-mult_abund_probit(data_list, prior_list, initial_list, block,
-  begin_group_update, update_omega, burn, iter)
+mult_abund_probit(
+  data_list,
+  prior_list,
+  initial_list,
+  block,
+  begin_group_update,
+  update_omega,
+  burn,
+  iter
+)
 }
 \arguments{
 \item{data_list}{A named list created of data items created from user data with the 

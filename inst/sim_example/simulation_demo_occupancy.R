@@ -1,5 +1,5 @@
 ## ----setup, include=FALSE------------------------------------------------
-knitr::opts_chunk$set(cache=TRUE)
+#knitr::opts_chunk$set(cache=TRUE)
 
 ## ------------------------------------------------------------------------
 library(multAbund)
@@ -49,57 +49,46 @@ cnt_dat$occur = rbinom(length(z), 1, prob=pnorm(z))
 data_mats = make_data_list(occur ="occur", delta_model = delta_model, 
                            X_model = X_model, data=cnt_dat[cnt_dat$obs<31,], 
                            sigma_model=~1)
-pred_mats = make_data_list(occur="occur", delta_model = delta_model, 
-                           X_model = X_model, data=cnt_dat, 
-                           sigma_model=~1)
 
 ## ------------------------------------------------------------------------
 
-#target0=function(n){return(rep(1/n, n))}
 alpha_prior = get_opt_alpha_prior(
   num_spec#, target0
 )
 
-alpha_ab = alpha_prior$ab
-phi_beta = 10
-mu_beta = c(qnorm(mean(cnt_dat$occur)), rep(0, ncol(data_mats$X)-1))
-phi_omega = 1
-df_omega = 1
-
-# inits=make_inits(
-#   data_list = data_mats,
-#   phi_beta=10, 
-#   mu_beta = c(fit0$coefficients, rep(0,ncol(X)-1)), 
-#   phi_omega = 1, 
-#   df_omega = 1
-# )
-
-inits=make_inits(
-  data_list = data_mats,
-  phi_beta=phi_beta, 
-  mu_beta = mu_beta, 
-  phi_omega = phi_omega, 
-  df_omega = df_omega,
-  num_groups = num_spec
+prior_parm = list(
+  a_alpha=alpha_prior[[1]][1],
+  b_alpha=alpha_prior[[1]][2],
+  Sigma_beta_inv = crossprod(data_mats$X)/100,
+  mu_beta = rep(0,ncol(X)),
+  phi_omega = 1,
+  df_omega = 1,
+  phi_sigma = 1,
+  df_sigma = 51
 )
+
+inits=list(
+  beta = rep(0, ncol(data_mats$X)),
+  groups=c(1:20),
+  delta = rep(0, ncol(data_mats$H)*num_spec),
+  omega=1,
+  sigma = rep(1.0E-4, ncol(data_mats$D)),
+  log_alpha=0
+)
+
 
 ## ------------------------------------------------------------------------
 block=200
-burn=0
-iter=10000
+burn=1000
+iter=5000
 
 fit = mult_abund_probit(
   data_list=data_mats,
-  pred_list=pred_mats,
-  initial_vals = inits,
-  phi_beta = phi_beta, 
-  mu_beta = mu_beta, 
-  phi_omega = phi_omega, 
-  df_omega = df_omega,
-  a_alpha=alpha_ab[1],
-  b_alpha=alpha_ab[2],
-  block = block, 
-  begin_group_update=5*block,
+  prior_list = prior_parm,
+  initial_list = inits,
+  block=block,
+  begin_group_update=block,
+  update_omega = TRUE,
   burn = burn, 
   iter = iter
 ) 
@@ -128,15 +117,3 @@ p2 = ggplot() +
   ) + xlab(NULL)
 g1=plot_grid(p1, p2, labels = c("(A) Probability of shared membership", "(B) Estimated clusters"), hjust=0, ncol=1)
 print(g1)
-
-# Fit and prediction
-ind = cnt_dat$obs<31
-pred_data = data.frame(occur=cnt_dat$occur[!ind], pred=apply(fit$pred, 2, median)[!ind])
-p3=ggplot(aes(x=occur, y=pred), data=pred_data) + geom_point() + geom_abline(a=0,b=1) + 
-  xlab("Unobserved count") + ylab("Predicted count") 
-fit_data = data.frame(count=cnt_dat$count[ind], fit=apply(fit$pred, 2, median)[ind])
-p4=ggplot(aes(x=count, y=fit), data=fit_data) + geom_point() + geom_abline(a=0,b=1) + 
-  xlab("Observed count") + ylab("Fitted count") 
-g2=plot_grid(p3, p4, labels = c("(A) Predicted values for unobserved data", "(B) Fitted vlues for observed data"), hjust=0, ncol=1)
-print(g2)
-

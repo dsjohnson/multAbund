@@ -2,6 +2,7 @@
 // [[Rcpp::depends(RcppProgress)]]
 #include "RcppArmadillo.h"
 #include <progress.hpp>
+#include <Rmath.h>
 
 using namespace Rcpp;
 using namespace arma;
@@ -61,7 +62,7 @@ double ln_norm_2(const arma::vec& x, const double& sigma_sq){
 }
 
 double ln_mvnorm(const arma::vec& x, const arma::mat& Sigma_inv){
-  return -0.5*x.n_elem*log(2*PI) + 0.5*log(det(Sigma_inv)) - 0.5*as_scalar(x.t()*Sigma_inv*x);
+  return -0.5*x.n_elem*log(2*M_PI) + 0.5*log(det(Sigma_inv)) - 0.5*as_scalar(x.t()*Sigma_inv*x);
 }
 
 double ln_cauchy(const arma::vec& x, const double& scale){

@@ -4,8 +4,16 @@
 \alias{make_data_list}
 \title{Make necessary data matrices for multivariate abundance and occurence RJMCMC functions}
 \usage{
-make_data_list(counts = NULL, occur = NULL, z_col = NULL, delta_model,
-  X_model, sigma_model = ~1, gamma_model = ~1, data)
+make_data_list(
+  counts = NULL,
+  occur = NULL,
+  z_col = NULL,
+  delta_model,
+  X_model,
+  sigma_model = ~1,
+  gamma_model = ~1,
+  data
+)
 }
 \arguments{
 \item{counts}{A character string providing the name of the column in \verb{data} that contains the counts}

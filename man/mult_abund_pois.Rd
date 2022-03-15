@@ -5,8 +5,15 @@
 \title{Perform RJMCMC for posterior sampling of multivariate cluster abundance model with Poisson
 observations}
 \usage{
-mult_abund_pois(data_list, initial_list, prior_list, block, begin_group_update,
-  burn, iter)
+mult_abund_pois(
+  data_list,
+  initial_list,
+  prior_list,
+  block,
+  begin_group_update,
+  burn,
+  iter
+)
 }
 \arguments{
 \item{data_list}{A named list created of data items created from user data with the 
