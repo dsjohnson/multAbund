@@ -2,7 +2,7 @@ Package: multAbund
 Type: Package
 Title: Model Multivariate Abundance and Occurence Using the Dirichlet Process
     Prior
-Version: 0.03.9001
+Version: 0.03.9002
 Date: 2018-3-28
 Author: Devin S. Johnson
 Maintainer: Devin S. Johnson <devin.johnson@noaa.gov>
